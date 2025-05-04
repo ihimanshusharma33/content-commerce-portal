@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -27,15 +26,14 @@ const PaymentModal = ({ isOpen, onClose, course, onPaymentComplete }: PaymentMod
         setIsProcessing(false);
         onPaymentComplete();
         toast("Payment successful", {
-          description: `You've successfully purchased ${course.title}`,
+          description: `You've successfully purchased ${course.title}`
         });
         onClose();
       }, 2000);
     } catch (error) {
       setIsProcessing(false);
       toast("Payment failed", {
-        description: "There was an issue processing your payment. Please try again.",
-        variant: "destructive",
+        description: "There was an issue processing your payment. Please try again."
       });
     }
   };

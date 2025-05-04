@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CourseCard from '@/components/CourseCard';
@@ -23,10 +22,8 @@ const FeaturedCourses = () => {
 
   const handleQuickBuy = (course: typeof courses[0]) => {
     if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in or create an account to purchase this course.",
-        variant: "default"
+      toast("Authentication required", {
+        description: "Please sign in or create an account to purchase this course."
       });
       navigate('/signin', { state: { redirectTo: `/course/${course.id}` } });
       return;
@@ -42,7 +39,7 @@ const FeaturedCourses = () => {
         purchaseCourse(selectedCourse.id);
         
         toast("Payment successful", {
-          description: `You've successfully purchased ${selectedCourse.title}`,
+          description: `You've successfully purchased ${selectedCourse.title}`
         });
         
         // Re-render component to show updated purchase state

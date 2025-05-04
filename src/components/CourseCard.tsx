@@ -11,7 +11,7 @@ interface CourseCardProps {
 const CourseCard = ({ course, isPurchased = false }: CourseCardProps) => {
   return (
     <Link to={`/course/${course.id}`} className="block">
-      <div className="bg-white rounded-lg overflow-hidden border shadow-sm card-hover">
+      <div className="bg-white rounded-lg overflow-hidden border shadow-sm card-hover h-full">
         <div className="relative">
           <img 
             src={course.image} 

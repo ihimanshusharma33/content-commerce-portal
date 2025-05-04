@@ -8,8 +8,9 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { courses, getCurrentUser, purchaseCourse } from '@/lib/data';
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/sonner";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import PaymentModal from '@/components/PaymentModal';
 
 const CourseDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +20,7 @@ const CourseDetail = () => {
   const isPurchased = user?.purchasedCourses.includes(id || '');
   
   const [activeTab, setActiveTab] = useState('overview');
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   
   useEffect(() => {
     // Scroll to top on page load
@@ -55,12 +57,13 @@ const CourseDetail = () => {
       return;
     }
     
+    // Open payment modal instead of direct purchase
+    setIsPaymentModalOpen(true);
+  };
+
+  // Handle successful payment
+  const handlePaymentComplete = () => {
     purchaseCourse(course.id);
-    toast({
-      title: "Course purchased!",
-      description: "Thank you for your purchase. The course is now available in your dashboard.",
-      variant: "default"
-    });
     
     // Re-render component to show updated purchase state
     window.dispatchEvent(new Event('storage'));
@@ -75,6 +78,16 @@ const CourseDetail = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
+      
+      {/* Payment Modal */}
+      {course && (
+        <PaymentModal 
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          course={course}
+          onPaymentComplete={handlePaymentComplete}
+        />
+      )}
       
       <div className="bg-secondary/20 py-10">
         <div className="container-custom">

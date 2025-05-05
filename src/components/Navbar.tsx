@@ -60,17 +60,15 @@ const Navbar = () => {
                   <span>{getCurrentUser()?.name || 'Account'}</span>
                 </Button>
                 <Button onClick={handleLogout} variant="secondary" size="sm">
-                  Sign Out
+                  Log Out
                 </Button>
               </>
             ) : (
               <>
-                <Button onClick={() => navigate('/signin')} variant="outline" size="sm">
+                <Button onClick={() => navigate('/signin')}  className="bg-primary" >
                   Sign In
                 </Button>
-                <Button onClick={() => navigate('/signup')} className="bg-primary" size="sm">
-                  Sign Up
-                </Button>
+
               </>
             )}
           </div>
@@ -152,16 +150,6 @@ const Navbar = () => {
                     className="w-full"
                   >
                     Sign In
-                  </Button>
-                  <Button 
-                    onClick={() => {
-                      navigate('/signup');
-                      setMobileMenuOpen(false);
-                    }}
-                    className="bg-primary w-full" 
-                    size="sm"
-                  >
-                    Sign Up
                   </Button>
                 </div>
               )}

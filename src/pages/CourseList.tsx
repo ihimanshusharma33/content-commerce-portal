@@ -42,11 +42,7 @@ const CourseList = () => {
     // Filter by categories
     if (selectedCategories.length > 0) {
       result = result.filter(course => selectedCategories.includes(course.category));
-    }
     
-    // Filter by level
-    if (selectedLevels.length > 0) {
-      result = result.filter(course => selectedLevels.includes(course.level));
     }
     
     // Filter by price
@@ -54,9 +50,10 @@ const CourseList = () => {
       result = result.filter(course => course.price === 0);
     } else if (priceRange === 'paid') {
       result = result.filter(course => course.price > 0);
-    } else if (priceRange === 'under50') {
-      result = result.filter(course => course.discountPrice ? course.discountPrice < 50 : course.price < 50);
     }
+    
+
+    
     
     // Sort courses
     if (sortBy === 'price-low') {
@@ -162,38 +159,7 @@ const CourseList = () => {
                     </div>
                   </div>
                   
-                  <div className="mb-6">
-                    <div className="flex justify-between items-center mb-3">
-                      <h3 className="font-medium text-lg">Level</h3>
-                      {selectedLevels.length > 0 && (
-                        <Button 
-                          variant="link" 
-                          className="text-xs p-0 h-auto" 
-                          onClick={() => setSelectedLevels([])}
-                        >
-                          Clear
-                        </Button>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      {["Beginner", "Intermediate", "Advanced", "All Levels"].map((level) => (
-                        <div key={level} className="flex items-center space-x-2">
-                          <Checkbox 
-                            id={`level-${level}`} 
-                            checked={selectedLevels.includes(level)}
-                            onCheckedChange={() => toggleLevel(level)}
-                          />
-                          <Label 
-                            htmlFor={`level-${level}`}
-                            className="text-sm cursor-pointer"
-                          >
-                            {level}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
+                 
                   <div className="mb-6">
                     <h3 className="font-medium text-lg mb-3">Price</h3>
                     <RadioGroup value={priceRange} onValueChange={setPriceRange}>
@@ -209,10 +175,7 @@ const CourseList = () => {
                         <RadioGroupItem value="paid" id="price-paid" />
                         <Label htmlFor="price-paid">Paid</Label>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="under50" id="price-under50" />
-                        <Label htmlFor="price-under50">Under $50</Label>
-                      </div>
+                     
                     </RadioGroup>
                   </div>
                   

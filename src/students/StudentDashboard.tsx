@@ -1,10 +1,7 @@
-import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { 
-  SidebarProvider, 
-  Sidebar, 
+import React, { useState, useEffect } from "react";
+import {
+  SidebarProvider,
+  Sidebar,
   SidebarTrigger,
   SidebarHeader,
   SidebarContent,
@@ -13,18 +10,17 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarInset,
-  SidebarSeparator
+  SidebarSeparator,
+  useSidebar
 } from "@/components/ui/sidebar";
-import { HomeIcon, HistoryIcon, Settings, LogOut, BookOpen, User } from "lucide-react";
+import { HomeIcon, HistoryIcon, Settings as SettingsIcon, LogOut, BookOpen, User, Menu, X } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
-interface PurchaseHistoryItem {
-  id: string;
-  courseName: string;
-  purchaseDate: string;
-  expiryDate: string;
-  status: "active" | "expired";
-  amount: number;
-}
+// Import our new components
+import MyCourses from "./components/MyCourses";
+import PurchaseHistory from "./components/PurchaseHistory";
+import Settings from "./components/Settings";
+import Profile from "./components/Profile";
 
 // Mock data for purchased courses and purchase history
 const purchasedCourses = [
@@ -51,7 +47,7 @@ const purchasedCourses = [
   },
 ];
 
-const purchaseHistory: PurchaseHistoryItem[] = [
+const purchaseHistory: { id: string; courseName: string; purchaseDate: string; expiryDate: string; status: "active" | "expired"; amount: number; }[] = [
   {
     id: "PUR-001",
     courseName: "Introduction to Computer Science",
@@ -86,26 +82,34 @@ const purchaseHistory: PurchaseHistoryItem[] = [
   },
 ];
 
-export const Dashboard: React.FC = () => {
-  const [activeSection, setActiveSection] = useState<"dashboard" | "history" | "settings">("dashboard");
+// Custom MenuButton component that uses the sidebar context correctly
+const MenuButton = () => {
+  const { toggleSidebar } = useSidebar();
   
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
+  return (
+    <button
+      onClick={toggleSidebar}
+      className="p-2 rounded-md hover:bg-accent flex items-center justify-center"
+      aria-label="Open sidebar"
+    >
+      <Menu className="size-5 text-muted-foreground hover:text-foreground" />
+    </button>
+  );
+};
 
-  const formatDateTime = (dateTimeString: string) => {
-    return new Date(dateTimeString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+export const Dashboard: React.FC = () => {
+  const [activeSection, setActiveSection] = useState<"dashboard" | "history" | "settings" | "profile">("dashboard");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const isMobile = useIsMobile();
+
+  // Initialize sidebar based on screen size
+  useEffect(() => {
+    if (isMobile) {
+      setIsSidebarOpen(false);
+    } else {
+      setIsSidebarOpen(true);
+    }
+  }, [isMobile]);
 
   // Student info for the profile section in sidebar
   const studentInfo = {
@@ -114,8 +118,15 @@ export const Dashboard: React.FC = () => {
     enrolledSince: "Jan 2025"
   };
 
+  // Calculate total investment
+  const totalInvestment = purchaseHistory.reduce((acc, item) => acc + item.amount, 0).toFixed(2);
+
   return (
-    <SidebarProvider defaultOpen={true}>
+    <SidebarProvider
+      defaultOpen={!isMobile}
+      open={isSidebarOpen}
+      onOpenChange={setIsSidebarOpen}
+    >
       <div className="flex h-screen w-full">
         {/* Sidebar */}
         <Sidebar>
@@ -128,13 +139,16 @@ export const Dashboard: React.FC = () => {
                 <span className="font-medium text-sm">{studentInfo.name}</span>
                 <span className="text-xs text-sidebar-foreground/70">Student</span>
               </div>
+              <SidebarTrigger className="ml-auto">
+                <X className="size-4" />
+              </SidebarTrigger>
             </div>
           </SidebarHeader>
-          
+
           <SidebarContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton 
+                <SidebarMenuButton
                   isActive={activeSection === "dashboard"}
                   onClick={() => setActiveSection("dashboard")}
                   tooltip="Dashboard"
@@ -143,9 +157,9 @@ export const Dashboard: React.FC = () => {
                   <span>Dashboard</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              
+
               <SidebarMenuItem>
-                <SidebarMenuButton 
+                <SidebarMenuButton
                   isActive={activeSection === "history"}
                   onClick={() => setActiveSection("history")}
                   tooltip="Purchase History"
@@ -154,31 +168,35 @@ export const Dashboard: React.FC = () => {
                   <span>Purchase History</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              
+
               <SidebarMenuItem>
                 <SidebarMenuButton
+                  isActive={activeSection === "dashboard"}
+                  onClick={() => setActiveSection("dashboard")}
                   tooltip="My Courses"
                 >
                   <BookOpen className="size-4" />
                   <span>My Courses</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              
+
               <SidebarSeparator />
-              
+
               <SidebarMenuItem>
-                <SidebarMenuButton 
+                <SidebarMenuButton
                   isActive={activeSection === "settings"}
                   onClick={() => setActiveSection("settings")}
                   tooltip="Settings"
                 >
-                  <Settings className="size-4" />
+                  <SettingsIcon className="size-4" />
                   <span>Settings</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              
+
               <SidebarMenuItem>
                 <SidebarMenuButton
+                  isActive={activeSection === "profile"}
+                  onClick={() => setActiveSection("profile")}
                   tooltip="Profile"
                 >
                   <User className="size-4" />
@@ -187,7 +205,7 @@ export const Dashboard: React.FC = () => {
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarContent>
-          
+
           <SidebarFooter>
             <SidebarMenu>
               <SidebarMenuItem>
@@ -197,276 +215,42 @@ export const Dashboard: React.FC = () => {
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
-            <div className="px-2 py-1">
-              <SidebarTrigger className="ml-auto" />
-            </div>
           </SidebarFooter>
         </Sidebar>
-        
+
         {/* Main Content */}
         <SidebarInset>
           <div className="container px-4 py-8 overflow-auto h-full">
             <div className="flex items-center justify-between mb-6">
+              {!isSidebarOpen && (
+                <MenuButton />
+              )}
               <h1 className="text-3xl font-bold">
                 {activeSection === "dashboard" && "Student Dashboard"}
                 {activeSection === "history" && "Purchase History"}
                 {activeSection === "settings" && "Settings"}
+                {activeSection === "profile" && "My Profile"}
               </h1>
-              <div className="md:hidden">
-                <SidebarTrigger />
-              </div>
             </div>
-            
-            {/* Dashboard Section */}
+
+            {/* Dashboard/Courses Section */}
             {activeSection === "dashboard" && (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-xl">Active Courses</CardTitle>
-                      <CardDescription>Courses you are currently enrolled in</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-3xl font-bold">{purchasedCourses.length}</p>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-xl">Average Progress</CardTitle>
-                      <CardDescription>Across all your courses</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-3xl font-bold">
-                        {Math.round(
-                          purchasedCourses.reduce((acc, course) => acc + course.progress, 0) / 
-                          purchasedCourses.length
-                        )}%
-                      </p>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-xl">Total Investment</CardTitle>
-                      <CardDescription>Amount spent on courses</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-3xl font-bold">
-                        ${purchaseHistory.reduce((acc, item) => acc + item.amount, 0).toFixed(2)}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
-                
-                <h2 className="text-2xl font-semibold mb-4">My Courses</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {purchasedCourses.map((course) => (
-                    <Card key={course.id} className="flex flex-col h-full">
-                      <CardHeader>
-                        <CardTitle className="line-clamp-2">{course.name}</CardTitle>
-                        <CardDescription>{course.instructor}</CardDescription>
-                      </CardHeader>
-                      <CardContent className="flex-grow">
-                        <div className="mb-4">
-                          <div className="flex justify-between text-sm mb-1">
-                            <span>Progress</span>
-                            <span>{course.progress}%</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2.5">
-                            <div 
-                              className="bg-primary h-2.5 rounded-full"
-                              style={{ width: `${course.progress}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          Last accessed: {formatDateTime(course.lastAccessed)}
-                        </p>
-                      </CardContent>
-                      <div className="p-6 pt-0 mt-auto">
-                        <button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 py-2 px-4 rounded-md">
-                          Continue Learning
-                        </button>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              </>
+              <MyCourses courses={purchasedCourses} />
             )}
-            
+
             {/* History Section */}
             {activeSection === "history" && (
-              <>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Purchase History</CardTitle>
-                    <CardDescription>All your transactions and course purchases</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="rounded-md">
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-muted">
-                            <tr>
-                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                Course
-                              </th>
-                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                Purchase Date
-                              </th>
-                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                Expiry Date
-                              </th>
-                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                Status
-                              </th>
-                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                Amount
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-card divide-y divide-gray-200">
-                            {purchaseHistory.map((item) => (
-                              <tr key={item.id}>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                  {item.courseName}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                                  {formatDate(item.purchaseDate)}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                                  {formatDate(item.expiryDate)}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <Badge variant={item.status === "active" ? "default" : "destructive"}>
-                                    {item.status === "active" ? "Active" : "Expired"}
-                                  </Badge>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                                  ${item.amount.toFixed(2)}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                      
-                      {/* Responsive mobile view for purchase history (visible on small screens) */}
-                      <div className="md:hidden">
-                        {purchaseHistory.map((item) => (
-                          <div key={item.id} className="border-t p-4">
-                            <div className="font-medium">{item.courseName}</div>
-                            <div className="mt-1 flex justify-between">
-                              <span className="text-sm text-muted-foreground">Purchase:</span>
-                              <span className="text-sm">{formatDate(item.purchaseDate)}</span>
-                            </div>
-                            <div className="mt-1 flex justify-between">
-                              <span className="text-sm text-muted-foreground">Expires:</span>
-                              <span className="text-sm">{formatDate(item.expiryDate)}</span>
-                            </div>
-                            <div className="mt-1 flex justify-between">
-                              <span className="text-sm text-muted-foreground">Amount:</span>
-                              <span className="text-sm">${item.amount.toFixed(2)}</span>
-                            </div>
-                            <div className="mt-2">
-                              <Badge variant={item.status === "active" ? "default" : "destructive"}>
-                                {item.status === "active" ? "Active" : "Expired"}
-                              </Badge>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </>
+              <PurchaseHistory purchaseHistory={purchaseHistory} />
             )}
-            
+
             {/* Settings Section */}
             {activeSection === "settings" && (
-              <>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Account Settings</CardTitle>
-                    <CardDescription>Manage your account preferences and notifications</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="space-y-4">
-                      <h3 className="font-medium">Personal Information</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label htmlFor="name" className="block text-sm font-medium text-foreground mb-1">Full Name</label>
-                          <input 
-                            type="text" 
-                            id="name"
-                            defaultValue={studentInfo.name}
-                            className="w-full rounded-md border border-input px-3 py-2 text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">Email</label>
-                          <input 
-                            type="email" 
-                            id="email"
-                            defaultValue={studentInfo.email}
-                            className="w-full rounded-md border border-input px-3 py-2 text-sm"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <h3 className="font-medium">Notification Settings</h3>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="space-y-0.5">
-                            <label htmlFor="course-updates" className="block text-sm font-medium">
-                              Course Updates
-                            </label>
-                            <p className="text-sm text-muted-foreground">
-                              Receive notifications about course content updates
-                            </p>
-                          </div>
-                          <div>
-                            <input 
-                              type="checkbox"
-                              id="course-updates"
-                              defaultChecked={true}
-                              className="rounded border-gray-300 text-primary shadow-sm focus:border-primary focus:ring focus:ring-offset-0 focus:ring-primary focus:ring-opacity-20"
-                            />
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <div className="space-y-0.5">
-                            <label htmlFor="promotions" className="block text-sm font-medium">
-                              Promotional Emails
-                            </label>
-                            <p className="text-sm text-muted-foreground">
-                              Receive emails about discounts and special offers
-                            </p>
-                          </div>
-                          <div>
-                            <input 
-                              type="checkbox"
-                              id="promotions"
-                              defaultChecked={false}
-                              className="rounded border-gray-300 text-primary shadow-sm focus:border-primary focus:ring focus:ring-offset-0 focus:ring-primary focus:ring-opacity-20"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="pt-4">
-                      <button className="bg-primary text-primary-foreground hover:bg-primary/90 py-2 px-4 rounded-md">
-                        Save Changes
-                      </button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </>
+              <Settings studentInfo={studentInfo} />
+            )}
+            
+            {/* Profile Section */}
+            {activeSection === "profile" && (
+              <Profile studentInfo={studentInfo} />
             )}
           </div>
         </SidebarInset>

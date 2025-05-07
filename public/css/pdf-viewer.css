@@ -1,0 +1,125 @@
+/* PDF Viewer Custom Styles */
+
+/* Main container for the PDF viewer */
+.pdf-viewer-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* PDF controls container */
+.pdf-controls {
+  background-color: white;
+  display: flex;
+  justify-content: space-evenly;
+  gap: 1rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* PDF content area */
+.pdf-content-area {
+  width: 100%;
+  height: calc(100% - 48px); /* Adjust based on controls height */
+  background-color: #f3f4f6;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+}
+
+/* Canvas container */
+.pdf-canvas-container {
+  height: 100%;
+  position: relative;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding: 1rem;
+}
+
+/* Small screens */
+@media screen and (max-width: 640px) {
+  .pdf-canvas-container {
+    width: 95vw;
+    margin: 0 auto;
+  }
+}
+
+/* Medium screens */
+@media screen and (min-width: 641px) and (max-width: 1023px) {
+  .pdf-canvas-container {
+    width: 85vw;
+    margin: 0 auto;
+  }
+}
+
+/* Large screens */
+@media screen and (min-width: 1024px) {
+  .pdf-canvas-container {
+    width: 70vw;
+    margin: 0 auto;
+  }
+}
+
+/* Canvas wrapper */
+.canvas-wrapper {
+  position: relative;
+  margin: 0 auto;
+}
+
+/* Watermark styling */
+.pdf-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-30deg);
+  width: 100%;
+  text-align: center;
+  font-size: clamp(1.5rem, 8vw, 4rem);
+  color: rgba(200, 200, 200, 0.3);
+  pointer-events: none;
+  z-index: 999;
+}
+
+/* PDF canvas */
+.pdf-canvas {
+  display: block;
+  margin: 0 auto;
+}
+
+/* Loading spinner */
+.pdf-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.8);
+  z-index: 10;
+}
+
+.pdf-spinner {
+  animation: spin 1s linear infinite;
+  height: 2rem;
+  width: 2rem;
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  border-bottom-color: #111827;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error message */
+.pdf-error {
+  width: 100%;
+  background-color: #fee2e2;
+  border: 1px solid #f87171;
+  color: #b91c1c;
+  padding: 0.75rem 1rem;
+  border-radius: 0.25rem;
+}

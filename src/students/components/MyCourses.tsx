@@ -59,7 +59,7 @@ export const MyCourses: React.FC<MyCoursesProps> = ({ courses }) => {
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">
-              ${/* This would typically come from purchase history */}
+              ₹{/* This would typically come from purchase history */}
             </p>
           </CardContent>
         </Card>

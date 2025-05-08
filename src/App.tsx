@@ -14,7 +14,7 @@ import SignUp from "./pages/SignUp";
 import Dashboard from "./pages/Dashboard";
 import {Dashboard as StudentDashboard} from "./students/StudentDashboard";
 import PaymentSuccess from "./pages/PaymentSuccess";
-import AdminDashboard from "./admin/AdminDashoboard";
+import AdminDashboard from "./admin/AdminDashboard";
 
 const queryClient = new QueryClient();
 

@@ -3,33 +3,46 @@ import * as pdfjsLib from 'pdfjs-dist';
 import '../styles/pdf-viewer.css'; // Fixed import path
 
 const PDFViewer = ({ pdfUrl }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const pdfContainerRef = useRef<HTMLDivElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<HTMLDivElement>(null);
   const [pdfDoc, setPdfDoc] = useState(null);
-  const [pageNum, setPageNum] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [scale, setScale] = useState(1.0);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [controlsHeight, setControlsHeight] = useState(0);
-  const [canvasDimensions, setCanvasDimensions] = useState({ width: 0, height: 0 });
-  const varOcg = useRef(); // watermark div ref
+  const [isMobile, setIsMobile] = useState(false);
+  const [pageCanvases, setPageCanvases] = useState<HTMLCanvasElement[]>([]);
 
   // Detect screen size and set appropriate initial scale
   useEffect(() => {
     const handleResize = () => {
+      const mobileView = window.innerWidth < 768;
+      setIsMobile(mobileView);
+      
       // Don't change scale on resize, only set initial scale
       if (scale === 1.0) {
-        const isMobile = window.innerWidth < 768;
-        setScale(isMobile ? 0.8 : 1.5);
+        setScale(mobileView ? 0.8 : 1.5);
       }
 
       // Update controls height for dynamic container sizing
       if (controlsRef.current) {
         setControlsHeight(controlsRef.current.offsetHeight);
+      }
+      
+      // Adjust PDF container height dynamically
+      updatePdfContainerHeight();
+    };
+
+    // Function to update PDF container height
+    const updatePdfContainerHeight = () => {
+      if (containerRef.current && pdfContainerRef.current && controlsRef.current) {
+        const containerHeight = containerRef.current.clientHeight;
+        const controlsHeight = controlsRef.current.offsetHeight;
+        // Set the PDF container height to fill the available space
+        pdfContainerRef.current.style.height = `calc(100% - ${controlsHeight}px)`;
       }
     };
 
@@ -45,14 +58,20 @@ const PDFViewer = ({ pdfUrl }) => {
   useEffect(() => {
     if (controlsRef.current) {
       setControlsHeight(controlsRef.current.offsetHeight);
+      
+      // Ensure PDF container height is updated
+      if (pdfContainerRef.current) {
+        pdfContainerRef.current.style.height = `calc(100% - ${controlsRef.current.offsetHeight}px)`;
+      }
     }
   }, []);
 
+  // Set the worker source path explicitly
   useEffect(() => {
-    // Set the worker source path explicitly
     pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.js';
   }, []);
 
+  // Load PDF document
   useEffect(() => {
     if (!pdfUrl || typeof pdfUrl !== 'string') {
       setError("Invalid PDF URL provided");
@@ -67,7 +86,7 @@ const PDFViewer = ({ pdfUrl }) => {
     pdfjsLib.getDocument(pdfUrl).promise.then((pdf) => {
       setPdfDoc(pdf);
       setTotalPages(pdf.numPages);
-      renderPage(pdf, pageNum, scale);
+      renderAllPages(pdf, scale);
       setIsLoading(false);
     }).catch(err => {
       console.error("Failed to load PDF:", err);
@@ -76,29 +95,87 @@ const PDFViewer = ({ pdfUrl }) => {
     });
   }, [pdfUrl]);
 
+  // Re-render pages when scale changes
   useEffect(() => {
     if (pdfDoc) {
-      renderPage(pdfDoc, pageNum, scale);
+      renderAllPages(pdfDoc, scale);
     }
-  }, [pageNum, scale]);
+  }, [scale]);
 
-  const renderPage = (pdf, num, scale) => {
-    pdf.getPage(num).then((page) => {
-      const viewport = page.getViewport({ scale });
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const context = canvas.getContext('2d');
+  const renderAllPages = async (pdf, scale) => {
+    // Check if container reference exists
+    if (!canvasContainerRef.current) {
+      console.error('Canvas container reference is null');
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      
+      // Safer way to clear existing content - use innerHTML instead of manual child removal
+      if (canvasContainerRef.current) {
+        canvasContainerRef.current.innerHTML = '';
+      }
 
-      // Set canvas dimensions based on the viewport
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
-      setCanvasDimensions({ width: viewport.width, height: viewport.height });
-      // Render the PDF page
-      page.render({
-        canvasContext: context,
-        viewport: viewport,
-      });
-    });
+      const numPages = pdf.numPages;
+      const newCanvases: HTMLCanvasElement[] = [];
+
+      for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+        try {
+          // Verify canvasContainerRef is still valid before each page render
+          if (!canvasContainerRef.current) {
+            console.warn('Canvas container no longer exists during rendering of page', pageNum);
+            break;
+          }
+
+          const page = await pdf.getPage(pageNum);
+          const viewport = page.getViewport({ scale });
+          
+          // Create canvas wrapper div
+          const pageContainer = document.createElement('div');
+          pageContainer.className = 'pdf-page-container';
+          
+          // Create the canvas element
+          const canvas = document.createElement('canvas');
+          canvas.className = 'pdf-canvas';
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+          
+          // Render page
+          const context = canvas.getContext('2d');
+          if (context) {
+            await page.render({
+              canvasContext: context,
+              viewport: viewport
+            }).promise;
+          }
+          
+          // Apply watermark to each page
+          const watermarkDiv = document.createElement('div');
+          watermarkDiv.className = 'pdf-watermark';
+          watermarkDiv.textContent = 'Confidential';
+          
+          // Append elements - check again if container still exists
+          pageContainer.appendChild(canvas);
+          pageContainer.appendChild(watermarkDiv);
+          
+          // Final check before appending to DOM
+          if (canvasContainerRef.current) {
+            canvasContainerRef.current.appendChild(pageContainer);
+            newCanvases.push(canvas);
+          }
+        } catch (err) {
+          console.error(`Error rendering page ${pageNum}:`, err);
+        }
+      }
+      
+      setPageCanvases(newCanvases);
+    } catch (error) {
+      console.error('Error in renderAllPages:', error);
+      setError(`Failed to render PDF pages: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Disable right-click, selection, keyboard shortcuts, and prevent copy
@@ -138,6 +215,21 @@ const PDFViewer = ({ pdfUrl }) => {
     };
   }, []);
 
+  // Enable pinch to zoom and other touch gestures for mobile
+  useEffect(() => {
+    if (!isMobile || !pdfContainerRef.current) return;
+    
+    // Allow touch-action in CSS for the PDF container to enable native zooming
+    if (pdfContainerRef.current) {
+      pdfContainerRef.current.style.touchAction = 'pinch-zoom';
+    }
+    
+    if (canvasContainerRef.current) {
+      canvasContainerRef.current.style.overflow = 'auto';
+      (canvasContainerRef.current.style as any).WebkitOverflowScrolling = 'touch';
+    }
+  }, [isMobile]);
+
   // Handle zoom in/out
   const handleZoomIn = () => {
     setScale(prevScale => Math.min(5, prevScale + 0.2));
@@ -151,82 +243,60 @@ const PDFViewer = ({ pdfUrl }) => {
     <div
       ref={containerRef}
       className="pdf-viewer-container"
+      style={{ height: '100%', maxHeight: '100vh' }}
     >
-      {/* Controls at the top - responsive layout */}
+      {/* Controls at the top - responsive layout, hide on mobile */}
       <div
         ref={controlsRef}
         className="pdf-controls"
       >
-
-
-        <div className="flex items-center gap-1 sm:gap-2 mt-1 sm:mt-0 w-full sm:w-auto justify-center">
-          <button
-            onClick={handleZoomOut}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-1 px-3 rounded-md transition-colors"
-          >
-            <span className="text-lg">−</span>
-          </button>
-          <span className="text-xs sm:text-sm whitespace-nowrap min-w-[2.5rem] text-center">{Math.round(scale * 100)}%</span>
-          <button
-            onClick={handleZoomIn}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-1 px-3 rounded-md transition-colors"
-          >
-            <span className="text-lg">+</span>
-          </button>
-        </div>
+        {/* Only show zoom controls on desktop */}
+        {!isMobile && (
+          <div className="flex items-center gap-1 sm:gap-2 mt-1 sm:mt-0 w-full sm:w-auto justify-center">
+            <button
+              onClick={handleZoomOut}
+              className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-1 px-3 rounded-md transition-colors"
+            >
+              <span className="text-lg">−</span>
+            </button>
+            <span className="text-xs sm:text-sm whitespace-nowrap min-w-[2.5rem] text-center">{Math.round(scale * 100)}%</span>
+            <button
+              onClick={handleZoomIn}
+              className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-1 px-3 rounded-md transition-colors"
+            >
+              <span className="text-lg">+</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* PDF Viewer with proper responsive classes */}
       <div
         ref={pdfContainerRef}
-        className="pdf-content-area"
+        className={`pdf-content-area ${isMobile ? 'touch-pinch-zoom' : ''}`}
+        style={{ 
+          overflow: 'auto', 
+          height: `calc(100% - ${controlsHeight}px)`,
+          display: 'flex',
+          justifyContent: 'center'
+        }}
       >
         {/* The canvas container with proper sizing based on PDF dimensions */}
         <div
           ref={canvasContainerRef}
           className="pdf-canvas-container"
+          style={{
+            minWidth: 'min-content',
+            width: 'auto',
+            padding: '1rem',
+            overflow: 'visible'
+          }}
         >
-          {/* Inner container for the canvas */}
-          <div className="canvas-wrapper">
-            {isLoading && (
-              <div className="pdf-loading">
-                <div className="pdf-spinner"></div>
-              </div>
-            )}
-
-            <div
-              ref={varOcg}
-              className="pdf-watermark"
-            >
-              Confidential
+          {isLoading && (
+            <div className="pdf-loading">
+              <div className="pdf-spinner"></div>
             </div>
-
-            <canvas
-              ref={canvasRef}
-              className="pdf-canvas"
-            />
-          </div>
-        </div>
-      </div>
-      <div className='flex justify-center'>
-        <div className='flex justify-center items-center gap-2 mb-2'>
-          <button
-            onClick={() => setPageNum((prev) => Math.max(1, prev - 1))}
-            disabled={pageNum <= 1}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-1 px-2 sm:px-3 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
-          >
-            Previous
-          </button>
-          <div className="text-xs sm:text-sm whitespace-nowrap">
-            Page <span className="font-bold">{pageNum}</span> of <span className="font-medium">{totalPages}</span>
-          </div>
-          <button
-            onClick={() => setPageNum((prev) => Math.min(totalPages, prev + 1))}
-            disabled={pageNum >= totalPages}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-1 px-2 sm:px-3 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
-          >
-            Next
-          </button>
+          )}
         </div>
       </div>
 

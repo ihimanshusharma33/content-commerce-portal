@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import CourseCard from '@/components/CourseCard';
+import { isAuthenticated, getCurrentUser, courses as userCourse } from '@/lib/data';
 
 interface MyCoursesProps {
   courses: any[]; // Replace with your actual course type
@@ -8,16 +9,21 @@ interface MyCoursesProps {
 
 const MyCourses: React.FC<MyCoursesProps> = ({ courses }) => {
   const navigate = useNavigate();
-  
+  const user = getCurrentUser();
+  console.log(user);
+  const purchasedCourses = userCourse.filter(course => 
+    user?.purchasedCourses.includes(course.id)
+  );
+
   return (
     <>
-      {courses.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {courses.map(course => (
-            <CourseCard 
-              key={course.id} 
-              course={course} 
-              isPurchased={true} 
+      {purchasedCourses.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {purchasedCourses.map(course => (
+            <CourseCard
+              key={course.id}
+              course={course}
+              isPurchased={true}
             />
           ))}
         </div>
@@ -27,7 +33,7 @@ const MyCourses: React.FC<MyCoursesProps> = ({ courses }) => {
           <p className="text-muted-foreground mb-4 sm:mb-6 text-sm sm:text-base">
             Browse our catalog and find the perfect course to start your learning journey
           </p>
-          <button 
+          <button
             onClick={() => navigate('/courses')}
             className="btn-primary text-sm px-3 py-1.5 sm:text-base sm:px-4 sm:py-2"
           >

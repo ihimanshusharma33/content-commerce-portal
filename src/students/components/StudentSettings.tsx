@@ -6,7 +6,7 @@ const StudentSettings = () => {
   const [marketingEmails, setMarketingEmails] = useState(false);
   
   return (
-    <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+    <div className="bg-white pt-1 p-4 sm:p-6">
       <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Account Settings</h2>
       
       <div className="space-y-4 sm:space-y-5">

@@ -40,16 +40,7 @@ const MyCourses = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      
-      <div className="bg-secondary/20 py-8">
-        <div className="container-custom">
-          <h1 className="text-3xl font-bold mb-2">My Courses</h1>
-          <p className="text-muted-foreground">
-            Continue your learning journey
-          </p>
-        </div>
-      </div>
-      
+    
       <main className="flex-grow py-8">
         <div className="container-custom">
           {purchasedCourses.length > 0 ? (

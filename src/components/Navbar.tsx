@@ -70,25 +70,19 @@ const Navbar = () => {
           <div className="flex items-center space-x-2">
             {isLoggedIn ? (
               <div className="relative flex flex-start" ref={dropdownRef}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex items-center"
-                  onClick={() => navigate('/student-dashboard')}
+                <Link to='/student-dashboard'
+                  className="flex text-gray-600  font-medium  hover:text-primary  items-center"
                 >
-                  <User className="h-5 w-5 mr-2" />
-                  <span>{getCurrentUser()?.name || 'Account'}</span>
-                </Button>
+                  Account
+                </Link>
 
-                <Button
-                  variant="ghost"
-                  size="sm"
+                <button
                   onClick={handleLogout}
-                  className="mr-2 text-red-600"
+                  className="ml-8 flex justify-center font-medium text-red-600 bg-white"
                 >
-                  <LogOut className="h-4 w-4" />
-                  Logout
-                </Button>
+                  <LogOut className="h-5 w-5" />
+                  <span className="text-red-600">&nbsp;Sign Out</span>
+                </button>
               </div>
             ) : (
               <Button onClick={() => navigate('/signin')} className="bg-primary">

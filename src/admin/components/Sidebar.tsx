@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { HomeIcon, BookOpen, Star, CreditCard, User, Settings, LogOut, ChevronRight, GraduationCap } from "lucide-react";
+import { HomeIcon, BookOpen, Star, CreditCard, User, Settings, LogOut, ChevronRight, GraduationCap, ChevronLeft } from "lucide-react";
 // Adjust the path as needed
 import { SidebarItem} from "../../admin/types"; // Reusing the type
 import { sidebarItems } from "../../admin/data/sidebarItems"; // Importing sidebar items
@@ -31,7 +31,7 @@ const Sidebar: React.FC<StudentSidebarProps> = ({
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           className="text-gray-500 hover:text-gray-700"
         >
-          <ChevronRight className={`h-5 w-5 transform transition-transform ${!isSidebarOpen && 'rotate-180'}`} />
+          <ChevronLeft className={`h-5 w-5 transform transition-transform ${!isSidebarOpen && 'rotate-180'}`} />
         </button>
       </div>
 

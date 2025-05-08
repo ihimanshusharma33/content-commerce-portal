@@ -107,7 +107,7 @@ const CourseList = () => {
       
       <div className="bg-secondary/20 py-8">
         <div className="container-custom">
-          <h1 className="text-3xl font-bold mb-2">All Courses</h1>
+          <h1 className="text-xl font-bold mb-2">All Courses</h1>
           <p className="text-muted-foreground">Browse our collection of courses to advance your skills</p>
         </div>
       </div>

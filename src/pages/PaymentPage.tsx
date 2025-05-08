@@ -102,16 +102,14 @@ const PaymentPage = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       
-      <main className="flex-grow bg-gray-50 py-8 sm:py-12">
+      <main className="flex-grow bg-gray-50 py-8 sm:py-2">
         <div className="container-custom">
-          <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8">Complete Your Purchase</h1>
-          
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Column - Order Summary */}
             <div className="lg:col-span-1">
               <Card className="overflow-hidden">
                 <div className="p-6">
-                  <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
+                  <h2 className="text-xl font-medium mb-4">Order Summary</h2>
                   
                   <div className="flex gap-4 mb-4">
                     <div className="w-20 h-16 rounded overflow-hidden flex-shrink-0">
@@ -159,7 +157,7 @@ const PaymentPage = () => {
                       </div>
                     )}
                     
-                    <div className="flex justify-between font-semibold text-xl mt-2 pt-2 border-t">
+                    <div className="flex justify-between font-medium text-xl mt-2 pt-2 border-t">
                       <span>Total</span>
                       <span>${price.toFixed(2)}</span>
                     </div>
@@ -186,7 +184,7 @@ const PaymentPage = () => {
             {/* Right Column - Payment Form */}
             <div className="lg:col-span-2">
               <Card className="p-6">
-                <h2 className="text-xl font-semibold mb-6">Payment Method</h2>
+                <h2 className="text-xl font-medium mb-6">Payment Method</h2>
                 
                 <form onSubmit={handleSubmit}>
                   <RadioGroup 
@@ -333,7 +331,7 @@ const PaymentPage = () => {
               </p>
               <ul className="list-disc pl-6 space-y-1">
                 <li>The course content is for your personal use only</li>
-                <li><span className="font-semibold text-red-600">Sharing, distributing, or reselling course materials is strictly prohibited and may constitute a criminal offense</span></li>
+                <li><span className="font-medium text-red-600">Sharing, distributing, or reselling course materials is strictly prohibited and may constitute a criminal offense</span></li>
                 <li>You may not reproduce, duplicate, copy, sell, resell or exploit any portion of the course</li>
                 <li>Recording, duplicating, or redistributing lectures, materials, or any course content is expressly forbidden</li>
               </ul>
@@ -345,7 +343,7 @@ const PaymentPage = () => {
                 We offer a 30-day money-back guarantee if you're not satisfied with your purchase. Refund requests after this period will not be honored.
               </p>
               <p>
-                <span className="font-semibold">Note on Payment Security:</span> We do not store your credit card details. All payment information is processed securely by our payment providers in compliance with PCI DSS standards.
+                <span className="font-medium">Note on Payment Security:</span> We do not store your credit card details. All payment information is processed securely by our payment providers in compliance with PCI DSS standards.
               </p>
             </section>
             

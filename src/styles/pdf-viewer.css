@@ -61,6 +61,7 @@
   /* Let height be determined by content */
   overflow: visible !important;
   /* Ensure content is not cut off */
+  margin: 0 auto; /* Center content when zoomed out */
 }
 
 /* Individual PDF page container */
@@ -75,6 +76,8 @@
   /* Allow content to be visible */
   width: fit-content;
   /* Size to content */
+  display: flex; /* Use flexbox to help with centering */
+  justify-content: center; /* Center horizontally */
 }
 
 /* Last page shouldn't have bottom margin */
@@ -84,14 +87,18 @@
 
 .pdf-canvas {
   display: block;
-  margin: 0px;
-  width: 80vw;
+  margin: 0 auto !important; /* Center canvas */
+  max-width: none !important; /* Remove max-width restrictions */
+  height: auto !important; /* Ensure aspect ratio is maintained */
+  transform-origin: center top; /* Set transform origin to center top for better zoom behavior */
 }
 
 /* Small screens */
 @media screen and (max-width: 640px) {
   .pdf-canvas-container {
-    width: 100%;
+    width: fit-content; /* Use fit-content instead of 100% for better zoom out */
+    min-width: 100%; /* Ensure it fills the container at 1x zoom */
+    padding: 0.5rem; /* Reduce padding on small screens */
     margin: 0px;
     /* Allow double tap to zoom on mobile */
     touch-action: manipulation;
@@ -133,6 +140,13 @@
   .pdf-page-container {
     width: fit-content;
     margin-bottom: 1.5rem;
+  }
+
+  .pdf-canvas {
+    display: block;
+    margin: 0 auto !important; /* Center canvas */
+    width: auto !important; /* Let width be determined by scale instead of forcing 100vw */
+    max-width: none !important; /* Remove any max-width constraints */
   }
 }
 

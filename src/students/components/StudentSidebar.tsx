@@ -1,16 +1,14 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { HomeIcon, BookOpen, Star, CreditCard, User, Settings, LogOut, ChevronRight, GraduationCap } from "lucide-react";
-// Adjust the path as needed
+import { User, BookOpen, Star, CreditCard, Settings, LogOut, ChevronLeft, GraduationCap } from "lucide-react";
 import { SidebarItem } from "../../admin/types"; // Reusing the type
 
 // Student sidebar items with all required navigation options
 export const studentSidebarItems: SidebarItem[] = [
-  { icon: <HomeIcon className="h-5 w-5" />, label: "Dashboard", id: "dashboard" },
+  { icon: <User className="h-5 w-5" />, label: "Profile", id: "profile" },
   { icon: <BookOpen className="h-5 w-5" />, label: "My Courses", id: "my-courses" },
   { icon: <Star className="h-5 w-5" />, label: "My Reviews", id: "reviews" },
   { icon: <CreditCard className="h-5 w-5" />, label: "Payment History", id: "payment-history" },
-  { icon: <User className="h-5 w-5" />, label: "Profile", id: "profile" },
   { icon: <Settings className="h-5 w-5" />, label: "Settings", id: "settings" },
 ];
 
@@ -25,12 +23,12 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
   activeSection,
   setActiveSection,
   onLogout,
-  items = studentSidebarItems // Default to student items if not provided
+  items = studentSidebarItems
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   return (
-    <aside className={`bg-white hidden border-r-2 relative h-[95vh] border-b-2 md:block ${isSidebarOpen ? 'md:w-64' : 'md:w-20'} transition-all duration-300 w-full`}>
+    <aside className={`bg-white border-r-2 relative h-[100vh] border-b-2 ${isSidebarOpen ? 'w-64' : 'w-20'} transition-all duration-300`}>
       <div className="p-4 flex items-center justify-between w-full">
         <Link to="/student" className={`flex items-center space-x-2 ${!isSidebarOpen && 'justify-center'}`}>
           <GraduationCap className="h-6 w-6 text-blue-600" />
@@ -40,7 +38,7 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           className="text-gray-500 hover:text-gray-700"
         >
-          <ChevronRight className={`h-5 w-5 transform transition-transform ${!isSidebarOpen && 'rotate-180'}`} />
+          <ChevronLeft className={`h-5 w-5 transform transition-transform ${!isSidebarOpen && 'rotate-180'}`} />
         </button>
       </div>
 
@@ -49,10 +47,11 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
           <button
             key={item.id}
             onClick={() => setActiveSection(item.id)}
-            className={`w-full font-medium  rounded-md flex items-center ${isSidebarOpen ? 'justify-start px-4' : 'justify-center'} py-3 my-1  ${activeSection === item.id
+            className={`w-full font-medium rounded-md flex items-center ${isSidebarOpen ? 'justify-start px-4' : 'justify-center'} py-3 my-1 ${
+              activeSection === item.id
                 ? 'text-primary'
                 : 'text-gray-600 hover:bg-secondary'
-              }`}
+            }`}
           >
             {item.icon}
             {isSidebarOpen && <span className="ml-3 font-medium">{item.label}</span>}
@@ -60,15 +59,14 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
         ))}
       </div>
       <div className="absolute bottom-0 w-full p-4 border-t">
-      <button
-        onClick={onLogout}
-        className={`w-full flex items-center ${isSidebarOpen ? 'justify-start px-4' : 'justify-center'} py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors`}
-      >
-        <LogOut className="h-5 w-5" />
-        {isSidebarOpen && <span className="ml-3">Sign Out</span>}
-      </button>
+        <button
+          onClick={onLogout}
+          className={`w-full flex items-center ${isSidebarOpen ? 'justify-start px-4' : 'justify-center'} py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors`}
+        >
+          <LogOut className="h-5 w-5" />
+          {isSidebarOpen && <span className="ml-3">Sign Out</span>}
+        </button>
       </div>
-
     </aside>
   );
 };

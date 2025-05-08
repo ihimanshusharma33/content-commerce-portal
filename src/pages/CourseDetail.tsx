@@ -103,7 +103,7 @@ const CourseDetail = () => {
                 )}
               </div>
               
-              <h1 className="text-3xl md:text-4xl font-bold mb-4">{course.title}</h1>
+              <h1 className="text-2xl md:text-2xl font-bold mb-4">{course.title}</h1>
               
               <p className="text-xl mb-4">{course.description}</p>
               

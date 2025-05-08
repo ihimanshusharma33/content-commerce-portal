@@ -52,8 +52,8 @@ const CourseDetail = () => {
       return;
     }
     
-    // Open payment modal instead of direct purchase
-    setIsPaymentModalOpen(true);
+    // Navigate to the payment page
+    navigate(`/checkout/${id}`);
   };
 
   // Handle successful payment
@@ -189,7 +189,8 @@ const CourseDetail = () => {
                   ) : (
                     <Button 
                       onClick={handlePurchase}
-                      className="w-full bg-accent text-white hover:bg-accent/90 mb-2"
+                      className="w-full bg-primary text-white hover:bg-primary/90 mb-2"
+                      size="lg"
                     >
                       Buy Now
                     </Button>

@@ -10,11 +10,13 @@ import CourseDetail from "./pages/CourseDetail";
 import CourseContent from "./pages/CourseContent";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
-import Dashboard from "./pages/Dashboard";
-import {Dashboard as StudentDashboard} from "./students/StudentDashboard";
+import Dashboard from "./pages/MyCourses";
+import StudentDashboard from "./students/StudentDashboard";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import AdminDashboard from "./admin/AdminDashoboard";
 import PDFViewerPage from "./pages/PDFViewerPage";
+import MyCourses from "./pages/MyCourses";
+import PaymentPage from "./pages/PaymentPage";
 
 const queryClient = new QueryClient();
 
@@ -31,14 +33,14 @@ const App = () => (
           <Route path="/course/:id/content" element={<CourseContent />} />
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/my-courses" element={<MyCourses />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
-          <Route path="/student" element={<StudentDashboard/>}/>
+          <Route path="/student-dashboard" element={<StudentDashboard/>}/>
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/pdf/:pdfId" element={<PDFViewerPage />} />
           <Route path="/pdf-viewer" element={<PDFViewerPage />} />
+          <Route path="/checkout/:courseId" element={<PaymentPage />} />
           <Route path="*" element={<NotFound />} />
-
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

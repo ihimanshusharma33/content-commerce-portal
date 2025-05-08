@@ -30,7 +30,7 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   return (
-    <aside className={`bg-white hidden border-r-2 relative h-[95vh] border-b-2 h-full md:block ${isSidebarOpen ? 'md:w-64' : 'md:w-20'} transition-all duration-300 w-full`}>
+    <aside className={`bg-white hidden border-r-2 relative h-[95vh] border-b-2 md:block ${isSidebarOpen ? 'md:w-64' : 'md:w-20'} transition-all duration-300 w-full`}>
       <div className="p-4 flex items-center justify-between w-full">
         <Link to="/student" className={`flex items-center space-x-2 ${!isSidebarOpen && 'justify-center'}`}>
           <GraduationCap className="h-6 w-6 text-blue-600" />

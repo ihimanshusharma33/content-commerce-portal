@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { courses, isAuthenticated, getCurrentUser } from '@/lib/data';
 import { Lesson } from '@/lib/data';
-import { X } from 'lucide-react';
-import PDFViewer from '@/components/PdfPreview';
+import { X, FileText } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
+import PDFViewerModal from '@/components/PDFViewerModal';
 
 const CourseContent = () => {
   const { id } = useParams<{ id: string }>();
@@ -13,7 +14,11 @@ const CourseContent = () => {
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
   const isMobile = useIsMobile();
   const [isMenuOpen, setIsMenuOpen] = useState(!isMobile);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile);
+  
+  // PDF state
+  const [isPdfOpen, setIsPdfOpen] = useState(false);
+  // This path should point to your actual PDF file
+  const pdfUrl = "/assests/pdf/Chapter.pdf";
 
   const user = getCurrentUser();
   const course = courses.find(c => c.id === id);
@@ -49,7 +54,7 @@ const CourseContent = () => {
     };
 
     window.addEventListener('storage', handleAuthChange);
-    
+
     return () => {
       window.removeEventListener('storage', handleAuthChange);
     };
@@ -58,7 +63,6 @@ const CourseContent = () => {
   // Update UI state when mobile/desktop status changes
   useEffect(() => {
     setIsMenuOpen(!isMobile);
-    setIsSidebarOpen(!isMobile);
   }, [isMobile]);
 
   if (!isLoggedIn || !course || !isPurchased) {
@@ -67,6 +71,8 @@ const CourseContent = () => {
 
   const handleLessonClick = (lesson: Lesson) => {
     setCurrentLesson(lesson);
+    // Note: PDF doesn't open automatically now
+    
     // Only close the menu automatically on mobile view
     if (isMobile) {
       setIsMenuOpen(false);
@@ -75,7 +81,14 @@ const CourseContent = () => {
 
   const toggleSidebar = () => {
     setIsMenuOpen(!isMenuOpen);
-    setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  const handleOpenPdf = () => {
+    setIsPdfOpen(true);
+  };
+  
+  const handleClosePdf = () => {
+    setIsPdfOpen(false);
   };
 
   const currentLessonIndex = currentLesson ? course.lessons.findIndex(lesson => lesson.id === currentLesson.id) : 0;
@@ -86,7 +99,7 @@ const CourseContent = () => {
     <div className="min-h-screen flex flex-col h-screen">
       {/* Course Header */}
       <header className="bg-white border-b sticky top-0 z-10">
-        <div className=" py-3">
+        <div className="py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
@@ -123,17 +136,16 @@ const CourseContent = () => {
       <div className="flex flex-1 overflow-hidden h-full">
         {/* Sidebar - Course Curriculum */}
         <aside
-          className={`bg-white border-r flex-shrink-0 overflow-y-auto transition-all duration-300 h-full ${
-            isMenuOpen 
-              ? "fixed inset-0 z-40 w-full md:relative md:w-80 lg:w-96" 
+          className={`bg-white border-r flex-shrink-0 overflow-y-auto transition-all duration-300 h-full ${isMenuOpen
+              ? "fixed inset-0 z-40 w-full md:relative md:w-80 lg:w-96"
               : "w-0 md:w-0 hidden"
-          }`}
+            }`}
         >
           <div className="p-4">
             <div className="flex justify-between items-center mb-4">
               <h2 className="font-semibold text-xl">Course Content</h2>
               {isMobile && (
-                <button 
+                <button
                   onClick={toggleSidebar}
                   className="md:hidden p-1 text-gray-600 hover:text-gray-900"
                   aria-label="Close sidebar"
@@ -164,24 +176,74 @@ const CourseContent = () => {
           </div>
         </aside>
 
-        <main className={`flex-1 flex flex-col h-full transition-all duration-300 `}>
-          {currentLesson && (
+        <main className="flex-1 flex flex-col h-full overflow-hidden">
+          {currentLesson ? (
             <>
-              {/* Content display */}
-              <div className="flex-1 overflow-auto">
-                <PDFViewer pdfUrl='/assests/pdf/Chapter.pdf' />
+              {/* Lesson content */}
+              <div className="flex-1 flex items-center justify-center bg-muted">
+                <div className="flex flex-col items-center justify-center p-6 text-center">
+                  <h2 className="text-2xl font-bold mb-4">{currentLesson.title}</h2>
+                  <p className="text-gray-600 mb-8 max-w-md">
+                    Click the button below to view the lesson materials.
+                  </p>
+                  
+                  <Button 
+                    onClick={handleOpenPdf} 
+                    size="lg"
+                    className="flex items-center gap-2"
+                  >
+                    <FileText className="h-5 w-5" />
+                    Open Lesson PDF
+                  </Button>
+                </div>
+              </div>
+              
+              {/* PDF Viewer Modal */}
+              <PDFViewerModal
+                isOpen={isPdfOpen}
+                onClose={handleClosePdf}
+                pdfUrl={pdfUrl}
+                title={currentLesson.title}
+              />
+              
+              {/* Lesson Navigation */}
+              <div className="flex justify-between p-4 border-t bg-white mt-auto">
+                {prevLesson ? (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setCurrentLesson(prevLesson)}
+                    className="flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    Previous
+                  </Button>
+                ) : (
+                  <div></div>
+                )}
+                
+                {nextLesson && (
+                  <Button 
+                    onClick={() => setCurrentLesson(nextLesson)}
+                    className="flex items-center gap-2"
+                  >
+                    Next
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"></path>
+                    </svg>
+                  </Button>
+                )}
               </div>
             </>
-          )}
-          
-          {!currentLesson && (
+          ) : (
             <div className="flex-1 flex items-center justify-center p-6 text-center">
               <div>
                 <p className="text-lg text-gray-600">Select a lesson from the sidebar to start learning</p>
                 {isMobile && !isMenuOpen && (
-                  <button 
+                  <button
                     onClick={toggleSidebar}
-                    className="mt-4 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
+                    className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
                   >
                     Open Course Menu
                   </button>

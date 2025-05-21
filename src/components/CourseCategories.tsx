@@ -6,7 +6,8 @@ const CourseCategories = () => {
   return (
     <section className="py-10 bg-secondary/30">
       <div className="container-custom">
-        <h2 className="text-3xl font-bold mb-8 text-center">Browse Categories</h2>
+        <h2 className="text-3xl font-bold mb-8 text-center animate-bounce.
+        ">Browse Categories</h2>
         
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {categories.map(category => (

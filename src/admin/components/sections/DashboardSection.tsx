@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, Dispatch, SetStateAction } from 'react';
 import { ChevronDown, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StatsCards from '../dashboard/StatsCards';
@@ -14,6 +14,7 @@ interface DashboardSectionProps {
   onRejectReview: (id: number) => void;
   onViewAllCourses: () => void;
   onViewAllReviews: () => void;
+  onSetActiveSection: Dispatch<SetStateAction<string>>;
 }
 
 const DashboardSection: React.FC<DashboardSectionProps> = ({

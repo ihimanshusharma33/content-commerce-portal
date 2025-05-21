@@ -10,7 +10,6 @@ import CourseDetail from "./pages/CourseDetail";
 import CourseContent from "./pages/CourseContent";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
-import Dashboard from "./pages/MyCourses";
 import StudentDashboard from "./students/StudentDashboard";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import AdminDashboard from "./admin/AdminDashoboard";

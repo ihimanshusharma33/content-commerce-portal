@@ -1,13 +1,14 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { BookOpen, User } from "lucide-react";
+import { BookOpen, User, Settings, Star, CreditCard, LogOut, BookOpenCheck } from "lucide-react";
 import { isAuthenticated, logoutUser, getCurrentUser } from '@/lib/data';
 
 const Navbar = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(isAuthenticated());
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -18,17 +19,28 @@ const Navbar = () => {
     const checkLoginStatus = () => {
       setIsLoggedIn(isAuthenticated());
     };
-    
+
     window.addEventListener('storage', checkLoginStatus);
-    
+
+    // Close dropdown when clicking outside
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+
     return () => {
       window.removeEventListener('storage', checkLoginStatus);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
   const handleLogout = () => {
     logoutUser();
     setIsLoggedIn(false);
+    setDropdownOpen(false);
     navigate('/');
     window.dispatchEvent(new Event('storage'));
   };
@@ -47,36 +59,42 @@ const Navbar = () => {
             Browse Courses
           </Link>
           {isLoggedIn && (
-            <Link to="/dashboard" className="text-gray-600 hover:text-primary font-medium">
+            <Link
+              to="/my-courses"
+              className="text-gray-600 hover:text-primary font-medium"
+            >
               My Courses
             </Link>
           )}
-          
+
           <div className="flex items-center space-x-2">
             {isLoggedIn ? (
-              <>
-                <Button variant="ghost" size="sm" className="flex items-center" onClick={() => navigate('/dashboard')}>
-                  <User className="h-5 w-5 mr-2" />
-                  <span>{getCurrentUser()?.name || 'Account'}</span>
-                </Button>
-                <Button onClick={handleLogout} variant="secondary" size="sm">
-                  Log Out
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button onClick={() => navigate('/signin')}  className="bg-primary" >
-                  Sign In
-                </Button>
+              <div className="relative flex flex-start" ref={dropdownRef}>
+                <Link to='/student-dashboard'
+                  className="flex text-gray-600  font-medium  hover:text-primary  items-center"
+                >
+                  Account
+                </Link>
 
-              </>
+                <button
+                  onClick={handleLogout}
+                  className="ml-8 flex justify-center font-medium text-red-600 bg-white"
+                >
+                  <LogOut className="h-5 w-5" />
+                  <span className="text-red-600">&nbsp;Sign Out</span>
+                </button>
+              </div>
+            ) : (
+              <Button onClick={() => navigate('/signin')} className="bg-primary">
+                Sign In
+              </Button>
             )}
           </div>
         </div>
 
         {/* Mobile Menu Button */}
         <div className="md:hidden">
-          <button 
+          <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="text-gray-500 hover:text-gray-700 focus:outline-none"
           >
@@ -95,63 +113,58 @@ const Navbar = () => {
       {mobileMenuOpen && (
         <div className="md:hidden bg-white px-4 pt-2 pb-4 border-b border-gray-200 animate-fade-in">
           <div className="flex flex-col space-y-3">
-            <Link 
-              to="/courses" 
+            <Link
+              to="/courses"
               className="text-gray-600 hover:text-primary py-2 font-medium"
               onClick={() => setMobileMenuOpen(false)}
             >
               Browse Courses
             </Link>
             {isLoggedIn && (
-              <Link 
-                to="/dashboard" 
+              <Link
+                to="/my-courses"
                 className="text-gray-600 hover:text-primary py-2 font-medium"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 My Courses
               </Link>
             )}
+            {isLoggedIn && (
+              <>
+                <Link
+                  to="/student-dashboard?tab=profile"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-gray-600 hover:text-primary  py-2 flex items-center"
+                >
+                  Dashboard
+                </Link>
+
+              </>
+            )}
             <div className="pt-2 border-t border-gray-100">
               {isLoggedIn ? (
-                <div className="space-y-2">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="w-full justify-start"
-                    onClick={() => {
-                      navigate('/dashboard');
-                      setMobileMenuOpen(false);
-                    }}
-                  >
-                    <User className="h-5 w-5 mr-2" />
-                    <span>{getCurrentUser()?.name || 'Account'}</span>
-                  </Button>
-                  <Button 
-                    onClick={() => {
-                      handleLogout();
-                      setMobileMenuOpen(false);
-                    }}
-                    variant="secondary" 
-                    size="sm"
-                    className="w-full"
-                  >
-                    Sign Out
-                  </Button>
-                </div>
+                <Button
+                  onClick={() => {
+                    handleLogout();
+                    setMobileMenuOpen(false);
+                  }}
+                  variant="destructive"
+                  size="sm"
+                  className="w-full justify-center flex items-center"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </Button>
               ) : (
-                <div className="space-y-2">
-                  <Button 
-                    onClick={() => {
-                      navigate('/signin');
-                      setMobileMenuOpen(false);
-                    }}
-                    variant="outline" 
-                    size="sm"
-                    className="w-full"
-                  >
-                    Sign In
-                  </Button>
-                </div>
+                <Button
+                  onClick={() => {
+                    navigate('/signin');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full bg-primary"
+                >
+                  Sign In
+                </Button>
               )}
             </div>
           </div>

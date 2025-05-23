@@ -52,8 +52,8 @@ const CourseDetail = () => {
       return;
     }
     
-    // Open payment modal instead of direct purchase
-    setIsPaymentModalOpen(true);
+    // Navigate to the payment page
+    navigate(`/checkout/${id}`);
   };
 
   // Handle successful payment
@@ -103,7 +103,7 @@ const CourseDetail = () => {
                 )}
               </div>
               
-              <h1 className="text-3xl md:text-4xl font-bold mb-4">{course.title}</h1>
+              <h1 className="text-2xl md:text-2xl font-bold mb-4">{course.title}</h1>
               
               <p className="text-xl mb-4">{course.description}</p>
               
@@ -189,7 +189,8 @@ const CourseDetail = () => {
                   ) : (
                     <Button 
                       onClick={handlePurchase}
-                      className="w-full bg-accent text-white hover:bg-accent/90 mb-2"
+                      className="w-full bg-primary text-white hover:bg-primary/90 mb-2"
+                      size="lg"
                     >
                       Buy Now
                     </Button>
@@ -233,8 +234,7 @@ const CourseDetail = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="mb-8">
               <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="curriculum">Curriculum</TabsTrigger>
-              <TabsTrigger value="instructor">Instructor</TabsTrigger>
+              <TabsTrigger value="Chapter">Chapters</TabsTrigger>
               <TabsTrigger value="reviews">Reviews</TabsTrigger>
             </TabsList>
             
@@ -278,9 +278,9 @@ const CourseDetail = () => {
               </div>
             </TabsContent>
             
-            <TabsContent value="curriculum">
+            <TabsContent value="Chapter">
               <div>
-                <h2 className="text-2xl font-bold mb-6">Course Curriculum</h2>
+                <h2 className="text-2xl font-bold mb-6">Subject Chapter</h2>
                 <div className="mb-4">
                   <p className="text-muted-foreground">
                     {totalLessons} lessons • {course.duration} total length • {freeLessons} free lessons
@@ -342,62 +342,6 @@ const CourseDetail = () => {
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="instructor">
-              <div className="max-w-3xl">
-                <h2 className="text-2xl font-bold mb-6">Meet Your Instructor</h2>
-                
-                <div className="flex flex-col md:flex-row gap-6 items-start">
-                  <div className="w-32 h-32 rounded-full overflow-hidden flex-shrink-0">
-                    <img 
-                      src="/placeholder.svg" 
-                      alt={course.instructor}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-xl font-semibold mb-2">{course.instructor}</h3>
-                    <p className="text-muted-foreground mb-3">Instructor & Course Creator</p>
-                    
-                    <div className="flex flex-wrap items-center gap-4 mb-4">
-                      <div className="flex items-center">
-                        <svg className="w-5 h-5 mr-1 text-amber-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                        <span>{course.rating.toFixed(1)} Instructor Rating</span>
-                      </div>
-                      
-                      <div className="flex items-center">
-                        <svg className="w-5 h-5 mr-1 text-gray-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"></path>
-                        </svg>
-                        <span>10,000+ Students</span>
-                      </div>
-                      
-                      <div className="flex items-center">
-                        <svg className="w-5 h-5 mr-1 text-gray-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                          <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd"></path>
-                        </svg>
-                        <span>5 Courses</span>
-                      </div>
-                    </div>
-                    
-                    <p className="mb-4">
-                      {course.instructor} is a professional educator and industry expert with over 10 years 
-                      of experience in {course.category}. They have worked with leading companies and have 
-                      taught thousands of students worldwide.
-                    </p>
-                    
-                    <p>
-                      Their teaching style focuses on practical, hands-on learning with real-world projects 
-                      and examples. Students consistently praise their ability to explain complex concepts 
-                      in a clear and accessible way.
-                    </p>
-                  </div>
-                </div>
               </div>
             </TabsContent>
             

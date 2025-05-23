@@ -33,9 +33,8 @@ const SignIn = () => {
         title: "Admin login successful",
         description: "Welcome back, Admin!",
       });
-      navigate('/admin-dashboard');
       window.dispatchEvent(new Event('storage'));
-      navigate(redirectTo);
+      navigate('/admin-dashboard');
     }
     else if (user) {
       toast({

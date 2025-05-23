@@ -1,98 +1,145 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { fetchCourses, createCourse, updateCourse, deleteCourse } from "../../../services/apiService";
-import { Course } from "../../types";
-import CourseList from "./CourseList";
-import CourseForm from "./CourseForm";
-import DeleteDialog from "../common/DeleteDialog";
+import { Course } from "../../../../types/index";
 
 const CourseManager: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-  const [isCourseFormOpen, setIsCourseFormOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [newCourseName, setNewCourseName] = useState("");
+  const [totalSemesters, setTotalSemesters] = useState<number | string>(""); // New field for total semesters
+  const [loading, setLoading] = useState(true); // Loading state for fetching courses
+  const [saving, setSaving] = useState(false); // Loading state for saving courses
 
+  // Fetch courses on component mount
   useEffect(() => {
-    // Fetch courses on component mount
+    setLoading(true);
     fetchCourses()
       .then((data) => setCourses(data))
-      .catch((error) => console.error("Failed to fetch courses:", error));
+      .catch((error) => console.error("Failed to fetch courses:", error))
+      .finally(() => setLoading(false));
   }, []);
 
-  const handleCreateCourse = (course: Partial<Course>) => {
-    createCourse(course)
-      .then((newCourse) => setCourses((prev) => [...prev, newCourse]))
-      .catch((error) => console.error("Failed to create course:", error));
-  };
-
-  const handleUpdateCourse = (id: number, course: Partial<Course>) => {
-    updateCourse(id, course)
-      .then((updatedCourse) =>
-        setCourses((prev) =>
-          prev.map((c) => (c.id === updatedCourse.id ? updatedCourse : c))
-        )
-      )
-      .catch((error) => console.error("Failed to update course:", error));
+  const handleAddOrUpdateCourse = () => {
+    setSaving(true);
+    if (selectedCourse) {
+      // Update course
+      updateCourse(selectedCourse.id, { name: newCourseName, totalSemesters: Number(totalSemesters) })
+        .then((updatedCourse) => {
+          setCourses((prev) =>
+            prev.map((course) => (course.id === updatedCourse.id ? updatedCourse : course))
+          );
+          closeForm();
+        })
+        .catch((error) => console.error("Failed to update course:", error))
+        .finally(() => setSaving(false));
+    } else {
+      // Add new course
+      createCourse({ name: newCourseName, totalSemesters: Number(totalSemesters) })
+        .then((newCourse) => {
+          setCourses((prev) => [...prev, newCourse]);
+          closeForm();
+        })
+        .catch((error) => console.error("Failed to create course:", error))
+        .finally(() => setSaving(false));
+    }
   };
 
   const handleDeleteCourse = (id: number) => {
+    setSaving(true);
     deleteCourse(id)
-      .then(() => setCourses((prev) => prev.filter((c) => c.id !== id)))
-      .catch((error) => console.error("Failed to delete course:", error));
+      .then(() => {
+        setCourses((prev) => prev.filter((course) => course.id !== id));
+      })
+      .catch((error) => console.error("Failed to delete course:", error))
+      .finally(() => setSaving(false));
+  };
+
+  const openForm = (course?: Course) => {
+    setSelectedCourse(course || null);
+    setNewCourseName(course?.name || "");
+    setTotalSemesters(course?.totalSemesters || ""); // Pre-fill total semesters if editing
+    setIsFormOpen(true);
+  };
+
+  const closeForm = () => {
+    setSelectedCourse(null);
+    setNewCourseName("");
+    setTotalSemesters("");
+    setIsFormOpen(false);
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-xl font-semibold">Courses</h3>
-        <Button onClick={() => setIsCourseFormOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Course
-        </Button>
-      </div>
+    <div>
+      <h3 className="text-lg font-semibold">Courses</h3>
 
-      <CourseList
-        courses={courses}
-        onViewCourse={(course) => console.log("View Course:", course)}
-        onEditCourse={(course) => {
-          setSelectedCourse(course);
-          setIsCourseFormOpen(true);
-        }}
-        onDeleteCourse={(course) => {
-          setSelectedCourse(course);
-          setIsDeleteDialogOpen(true);
-        }}
-      />
+      {/* Add New Course Button */}
+      <Button onClick={() => openForm()}>Add New Course</Button>
 
-      {/* Create/Edit Course Dialog */}
-      {isCourseFormOpen && (
-        <CourseForm
-          isOpen={isCourseFormOpen}
-          onClose={() => setIsCourseFormOpen(false)}
-          onSubmit={(course) => {
-            if (selectedCourse) {
-              handleUpdateCourse(selectedCourse.id, course);
-            } else {
-              handleCreateCourse(course);
-            }
-          }}
-          course={selectedCourse}
-        />
+      {/* Loader for fetching courses */}
+      {loading ? (
+        <div className="flex justify-center items-center mt-4">
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      ) : (
+        <ul className="space-y-2 mt-4">
+          {courses.map((course) => (
+            <li key={course.id} className="border p-2 rounded-md flex justify-between items-center">
+              <span>
+                {course.name} (Semesters: {course.totalSemesters})
+              </span>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => openForm(course)}>
+                  Edit
+                </Button>
+                <Button size="sm" variant="destructive" onClick={() => handleDeleteCourse(course.id)}>
+                  Delete
+                </Button>
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
 
-      {/* Delete Confirmation Dialog */}
-      <DeleteDialog
-        isOpen={isDeleteDialogOpen}
-        onClose={() => setIsDeleteDialogOpen(false)}
-        onConfirm={() => {
-          if (selectedCourse) {
-            handleDeleteCourse(selectedCourse.id);
-          }
-        }}
-        title="Delete Course"
-        description={`Are you sure you want to delete the course "${selectedCourse?.name}"?`}
-      />
+      {/* Add/Edit Course Modal */}
+      {isFormOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white rounded-lg shadow-lg w-96 p-6">
+            <h4 className="text-md font-semibold">
+              {selectedCourse ? "Edit Course" : "Add New Course"}
+            </h4>
+            <input
+              type="text"
+              className="w-full border p-2 rounded-md mt-2"
+              placeholder="Course Name"
+              value={newCourseName}
+              onChange={(e) => setNewCourseName(e.target.value)}
+            />
+            <input
+              type="number"
+              className="w-full border p-2 rounded-md mt-2"
+              placeholder="Total Semesters"
+              value={totalSemesters}
+              onChange={(e) => setTotalSemesters(e.target.value)}
+            />
+            <div className="flex gap-2 mt-4">
+              <Button onClick={handleAddOrUpdateCourse} disabled={saving}>
+                {saving ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : selectedCourse ? (
+                  "Update Course"
+                ) : (
+                  "Add Course"
+                )}
+              </Button>
+              <Button variant="outline" onClick={closeForm}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

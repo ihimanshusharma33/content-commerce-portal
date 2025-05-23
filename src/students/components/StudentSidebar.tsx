@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { User, BookOpen, Star, CreditCard, Settings, LogOut, ChevronLeft, GraduationCap } from "lucide-react";
-import { SidebarItem } from "../../admin/types"; // Reusing the type
+import { SidebarItem } from "../../../types"; // Reusing the type
 
 // Student sidebar items with all required navigation options
 export const studentSidebarItems: SidebarItem[] = [

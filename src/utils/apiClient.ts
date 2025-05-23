@@ -3,7 +3,6 @@ import axios from "axios";
 // Create an Axios instance
 const apiClient = axios.create({
   baseURL: "https://amplifilearn.com/api/public/api", // Replace with your API base URL
-  timeout: 10000, // Request timeout in milliseconds
 });
 
 // Request interceptor

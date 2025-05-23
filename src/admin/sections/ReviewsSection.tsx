@@ -1,6 +1,6 @@
 import React from 'react';
-import ReviewTabs from '../reviews/ReviewTabs';
-import { Review } from '../../types';
+import ReviewTabs from '../components/reviews/ReviewTabs';
+import { Review } from '../../../types';
 
 interface ReviewsSectionProps {
   reviews: Review[];

@@ -15,7 +15,7 @@ import {
   TableCell, 
   TableRow 
 } from "@/components/ui/table";
-import { Review } from '../../types';
+import { Review } from '../../../../types';
 
 interface PendingReviewsProps {
   reviews: Review[];

@@ -1,4 +1,4 @@
-import { Course, Review, Transaction, DashboardStats, SidebarItem } from '../types';
+import { Course, Review, Transaction, DashboardStats, SidebarItem } from '../../../types';
 import { 
   LayoutDashboard, 
   BookOpen, 

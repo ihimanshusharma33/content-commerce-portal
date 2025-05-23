@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { HomeIcon, BookOpen, Star, CreditCard, User, Settings, LogOut, ChevronRight, GraduationCap, ChevronLeft } from "lucide-react";
 // Adjust the path as needed
-import { SidebarItem} from "../../admin/types"; // Reusing the type
+import { SidebarItem} from "../../../types"; // Reusing the type
 import { sidebarItems } from "../../admin/data/sidebarItems"; // Importing sidebar items
 
 interface StudentSidebarProps {

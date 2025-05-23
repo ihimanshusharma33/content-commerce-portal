@@ -1,10 +1,10 @@
 import React, { useState, Dispatch, SetStateAction } from 'react';
 import { ChevronDown, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import StatsCards from '../dashboard/StatsCards';
-import RecentCourses from '../dashboard/RecentCourses';
-import PendingReviews from '../dashboard/PendingReviews';
-import { Course, Review, DashboardStats } from '../../types';
+import StatsCards from '../components/dashboard/StatsCards';
+import RecentCourses from '../components/dashboard/RecentCourses';
+import PendingReviews from '../components/dashboard/PendingReviews';
+import { Course, Review, DashboardStats } from '../../../types';
 
 interface DashboardSectionProps {
   stats: DashboardStats;

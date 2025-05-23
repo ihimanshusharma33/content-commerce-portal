@@ -2,28 +2,21 @@ import { ReactNode } from "react";
 
 export interface Course {
   id: number | string;
-  title: string;
-  name?: string; // Added for compatibility
-  description?: string;
-  instructor?: string;
-  students?: number;
-  rating?: number;
-  price?: number;
-  status: 'active' | 'draft';
+  name?: string;
   total_semesters: number;
   created_at: string;
   updated_at?: string;
   subjects: Subject[];
 }
 
+
 export interface Subject {
   id: number | string;
   name: string;
   semester: number;
-  status: 'active' | 'draft';
-  description?: string;
-  chapters: Chapter[];
+  courseId:number;
 }
+
 
 export interface Chapter {
   id: number | string;
@@ -63,10 +56,10 @@ export interface DashboardStats {
   reviewsPending: number;
 }
 export interface SidebarItem {
-    icon: ReactNode;
-    label: string;
-    id: string;
-  }
-  
-  // Type for the sidebar items array
-  export type SidebarItems = SidebarItem[];
+  icon: ReactNode;
+  label: string;
+  id: string;
+}
+
+// Type for the sidebar items array
+export type SidebarItems = SidebarItem[];

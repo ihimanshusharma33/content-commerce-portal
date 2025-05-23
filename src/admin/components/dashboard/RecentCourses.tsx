@@ -16,7 +16,7 @@ import {
   TableCell, 
   TableRow 
 } from "@/components/ui/table";
-import { Course } from '../../types';
+import { Course } from '../../../../types';
 
 interface RecentCoursesProps {
   courses: Course[];

@@ -1,8 +1,8 @@
 import React from 'react';
 import { Filter } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import TransactionList from '../transactions/TransactionList';
-import { Transaction } from '../../types';
+import TransactionList from '../components/transactions/TransactionList';
+import { Transaction } from '../../../types';
 
 interface TransactionsSectionProps {
   transactions: Transaction[];

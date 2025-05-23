@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Transaction } from '../../types';
+import { Transaction } from '../../../../types';
 
 interface TransactionListProps {
   transactions: Transaction[];

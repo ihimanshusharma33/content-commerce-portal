@@ -3,11 +3,10 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from './components/Sidebar';
 import MobileHeader from './components/MobileHeader';
 import MobileMenu from './components/MobileMenu';
-import DashboardSection from './components/sections/DashboardSection';
-import CoursesSection from './components/sections/CoursesSection';
-import ReviewsSection from './components/sections/ReviewsSection';
-import TransactionsSection from './components/sections/TransactionsSection';
-import StudentsSection, {  SettingsSection } from './components/sections/PlaceholderSections';
+import DashboardSection from './sections/DashboardSection';
+import CoursesSection from './sections/CoursesSection';
+import ReviewsSection from './sections/ReviewsSection';
+import TransactionsSection from './sections/TransactionsSection';
 import { mockStats, mockCourses, mockReviews, mockTransactions } from './data/mockData';
 import { X } from "lucide-react";
 
@@ -155,12 +154,18 @@ const AdminDashboard: React.FC = () => {
           
           {/* Students Section */}
           {activeSection === "students" && (
-            <StudentsSection />
+            <div>
+              <h2 className="text-2xl font-bold">Students</h2>
+              <p>Student management features will be implemented here.</p>
+            </div>
           )}
           
           {/* Settings Section */}
           {activeSection === "settings" && (
-            <SettingsSection />
+             <div>
+             <h2 className="text-2xl font-bold">setting</h2>
+             <p>Settings management features will be implemented here.</p>
+           </div>
           )}
         </div>
       </div>

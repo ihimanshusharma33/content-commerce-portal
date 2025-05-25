@@ -22,6 +22,17 @@ export interface Chapter {
   content: string;
 }
 
+export interface Review {
+  id: number;
+  courseId: number;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  userId: number;
+  rating: number;
+  status: "pending" | "approved" | "rejected";
+}
+
 // Utility function to map snake_case to camelCase for Subject
 const mapSubjectFromApi = (subject: any): Subject => ({
   id: subject.subject_id,
@@ -46,12 +57,31 @@ const mapChapterFromApi = (chapter: any): Chapter => ({
   subjectId: chapter.subject_id,
   content: chapter.content,
 });
+
 const mapChapterToApi = (chapter: Partial<Chapter>): any => ({
   chapter_name: chapter.name,
   subject_id: chapter.subjectId,
   content: chapter.content,
 });
 
+const mapReviewFromApi = (review: any): Review => ({
+  id: review.review_id,
+  courseId: review.course_id,
+  content: review.review_description,
+  userId: review.user_id,
+  createdAt: review.created_at,
+  updatedAt: review.updated_at,
+  status: review.status,
+  rating: review.rating,
+});
+
+const mapReviewToApi = (review: Partial<Review>): any => ({
+  course_id: review.courseId,
+  review_description: review.content,
+  status: review.status,
+  rating: review.rating,
+
+});
 // Fetch all courses
 export const fetchCourses = (): Promise<Course[]> =>
   apiClient.get("/courses").then((response) =>
@@ -93,6 +123,9 @@ export const updateSubject = (id: number, subject: Partial<Subject>): Promise<Su
 export const deleteSubject = (id: number): Promise<void> =>
   apiClient.delete(`/subjects/${id}`).then(() => undefined);
 
+
+// ------------ Chapter Management ------------ //
+
 // Fetch chapters by subject ID
 export const fetchChaptersBySubject = (subjectId: number): Promise<Chapter[]> =>
   apiClient.get(`/chapters/subject/${subjectId}`).then((response) => {
@@ -119,3 +152,21 @@ export const updateChapter = (id: number, chapter: Partial<Chapter>): Promise<Ch
 // Delete a chapter
 export const deleteChapter = (id: number): Promise<void> =>
   apiClient.delete(`/chapters/${id}`).then(() => undefined);
+
+
+// ------------ Review Management ------------ //
+
+// Fetch all pending reviews
+export const fetchPendingReviews = (): Promise<Review[]> =>
+  apiClient.get('/reviews').then((response) => {
+    const data = response.data;
+    return Array.isArray(data) ? data.map(mapReviewFromApi) : [mapReviewFromApi(data)];
+  });
+
+// Approve a review
+export const approveReview = (id: number): Promise<void> =>
+  apiClient.post(`/reviews/${id}/approve`).then(() => undefined);
+
+// Reject a review
+export const rejectReview = (id: number): Promise<void> =>
+  apiClient.post(`/reviews/${id}/reject`).then(() => undefined);

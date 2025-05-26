@@ -1,16 +1,32 @@
 
 import { Link } from 'react-router-dom';
 import { categories } from '@/lib/data';
+import { useEffect, useState } from 'react';
+import { fetchCourses } from '@/services/apiService';
+import { Course } from 'types';
 
 const CourseCategories = () => {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCourses()
+      .then((data) => setCourses(data))
+      .catch((error) => console.error('Failed to fetch courses:', error))
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <section className="py-10 bg-secondary/30">
       <div className="container-custom">
         <h2 className="text-3xl font-bold mb-8 text-center animate-bounce.
         ">Browse Categories</h2>
         
+       {loading?(<>
+       Loading...
+       </>):(<>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {categories.map(category => (
+          {courses.map(category => (
             <Link 
               to={`/courses?category=${category.id}`}
               key={category.id}
@@ -24,10 +40,11 @@ const CourseCategories = () => {
                 />
               </div>
               <h3 className="font-medium text-center">{category.name}</h3>
-              <p className="text-sm text-gray-500">{category.count} courses</p>
+              <p className="text-sm text-gray-500">{category.totalSemesters} courses</p>
             </Link>
           ))}
         </div>
+       </>)}
       </div>
     </section>
   );

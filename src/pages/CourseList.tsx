@@ -4,13 +4,15 @@ import CourseCard from '@/components/CourseCard';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from "@/components/ui/button";
-import { courses, categories, getCurrentUser } from '@/lib/data';
+import { courses, getCurrentUser } from '@/lib/data';
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Filter, X } from "lucide-react"; // Import icons
+import { Course, Subject } from 'types';
+import { fetchCourses, fetchSubjectsByCourse } from '@/services/apiService';
 
 const CourseList = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -20,12 +22,37 @@ const CourseList = () => {
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('featured');
-  const [filteredCourses, setFilteredCourses] = useState(courses);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [categories, setcategories] = useState<Course[]>([]);
+  const [courses, setcourses] = useState<Subject[]>([]);
+  const [filteredCourses, setFilteredCourses] = useState(courses);
+
   
   const user = getCurrentUser();
   const purchasedCourses = user?.purchasedCourses || [];
   
+
+  useEffect(() => {
+    fetchCourses()
+      .then((data) => setcategories(data))
+      .catch((error) => console.error('Failed to fetch courses:', error))
+  }, []);
+
+ useEffect(() => {
+  if (categories.length > 0) {
+    const firstCourseId = categories[0].id;
+    fetchSubjectsByCourse(firstCourseId)
+      .then((data) => {
+        setcourses(data);
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  }
+}, [categories]);
+
+  console.log(categories);
+console.log(courses);
   // Apply filters
   useEffect(() => {
     // Existing filter logic...
@@ -104,6 +131,7 @@ const CourseList = () => {
     setPriceRange('all');
     setSortBy('featured');
     setSearchParams({});
+    setFilteredCourses(courses);
     setShowMobileFilters(false); // Close mobile filters when resetting
   };
   
@@ -146,39 +174,7 @@ const CourseList = () => {
                 htmlFor={`category-${category.id}`}
                 className="text-sm cursor-pointer"
               >
-                {category.name} <span className="text-muted-foreground">({category.count})</span>
-              </Label>
-            </div>
-          ))}
-        </div>
-      </div>
-      
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="font-medium text-lg">Level</h3>
-          {selectedLevels.length > 0 && (
-            <Button 
-              variant="link" 
-              className="text-xs p-0 h-auto" 
-              onClick={() => setSelectedLevels([])}
-            >
-              Clear
-            </Button>
-          )}
-        </div>
-        <div className="space-y-2">
-          {["Beginner", "Intermediate", "Advanced", "All Levels"].map((level) => (
-            <div key={level} className="flex items-center space-x-2">
-              <Checkbox 
-                id={`level-${level}`} 
-                checked={selectedLevels.includes(level)}
-                onCheckedChange={() => toggleLevel(level)}
-              />
-              <Label 
-                htmlFor={`level-${level}`}
-                className="text-sm cursor-pointer"
-              >
-                {level}
+                {category.name} <span className="text-muted-foreground">({category.totalSemesters})</span>
               </Label>
             </div>
           ))}

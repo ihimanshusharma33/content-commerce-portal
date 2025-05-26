@@ -63,3 +63,21 @@ export interface SidebarItem {
 
 // Type for the sidebar items array
 export type SidebarItems = SidebarItem[];
+
+export interface User {
+  id: number | string;
+  name: string;
+  email: string;
+  password: string;
+  password_confirmation:string;
+}
+
+export interface LoginResponse {
+  token: string; 
+  user: User;    
+}
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}

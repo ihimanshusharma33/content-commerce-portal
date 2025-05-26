@@ -1,3 +1,4 @@
+import { LoginCredentials, User } from "types";
 import apiClient from "../utils/apiClient";
 
 export interface Course {
@@ -82,6 +83,14 @@ const mapReviewToApi = (review: Partial<Review>): any => ({
   rating: review.rating,
 
 });
+
+const mapUserToApi = (user: Partial<User>): any => ({
+  name: user.name,
+  email: user.email,
+  password: user.password,
+  password_confirmation: user.password_confirmation,
+});
+
 // Fetch all courses
 export const fetchCourses = (): Promise<Course[]> =>
   apiClient.get("/courses").then((response) =>
@@ -170,3 +179,18 @@ export const approveReview = (id: number): Promise<void> =>
 // Reject a review
 export const rejectReview = (id: number): Promise<void> =>
   apiClient.post(`/reviews/${id}/reject`).then(() => undefined);
+
+// signup user
+export const createUser = (user: Partial<User>): Promise<Subject> =>
+  apiClient.post("/register", mapUserToApi(user)).then((response) => mapUserToApi(response.data));
+
+
+const mapLoginCredentialsToApi = (credentials: Partial<LoginCredentials>): any => ({
+  email: credentials.email,
+  password: credentials.password,
+});
+
+export const loginUser = (credentials: Partial<LoginCredentials>): Promise<User> =>
+  apiClient
+    .post("/login", mapLoginCredentialsToApi(credentials))
+    .then((response) => mapLoginCredentialsToApi(response.data)); 

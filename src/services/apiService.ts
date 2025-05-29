@@ -1,11 +1,12 @@
-import { LoginCredentials, User } from "types";
 import apiClient from "../utils/apiClient";
 
 export interface Course {
   id: number;
   name: string;
-  totalSemesters: number;
-  createdAt: string;
+  description?: string;
+  semester: number;
+  image?: string;
+  createdAt?: string;
 }
 
 export interface Subject {
@@ -32,6 +33,17 @@ export interface Review {
   userId: number;
   rating: number;
   status: "pending" | "approved" | "rejected";
+}
+
+// Add this to the top of the file with other interfaces
+export interface User {
+  id?: number;
+  name: string;
+  email: string;
+  password?: string;
+  role?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Utility function to map snake_case to camelCase for Subject
@@ -84,35 +96,84 @@ const mapReviewToApi = (review: Partial<Review>): any => ({
 
 });
 
-const mapUserToApi = (user: Partial<User>): any => ({
+// Add this mapping function with other mappers
+const mapUserFromApi = (user: any): User => ({
+  id: user.id,
   name: user.name,
   email: user.email,
-  password: user.password,
-  password_confirmation: user.password_confirmation,
+  role: user.role,
+  created_at: user.created_at,
+  updated_at: user.updated_at,
 });
 
 // Fetch all courses
 export const fetchCourses = (): Promise<Course[]> =>
-  apiClient.get("/courses").then((response) =>
-    response.data.map((course: any) => ({
-      id: course.course_id,
-      name: course.course_name,
-      totalSemesters: course.total_semester,
-      createdAt: course.created_at,
-    }))
-  );
+  apiClient.get("/courses").then((response) => {
+    // Check if the response has the expected structure
+    if (response.data && response.data.status && Array.isArray(response.data.data)) {
+      // Map the data array to our Course interface
+      return response.data.data.map((course: any) => ({
+        id: course.course_id,
+        name: course.course_name,
+        description: course.description,
+        semester: course.semester,
+        image: course.image, // API returns 'image' directly, not 'image_url'
+        createdAt: course.created_at,
+      }));
+    }
+    
+    // Fallback in case the structure is different
+    console.warn('Unexpected API response structure in fetchCourses:', response.data);
+    return [];
+  });
 
-// Create a new course
-export const createCourse = (course: Partial<Course>): Promise<Course> =>
-  apiClient.post("/courses", course).then((response) => response.data);
+// Create a new course - updated to use FormData and handle the response structure
+export const createCourse = (formData: FormData): Promise<Course> =>
+  apiClient.post("/courses", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  }).then((response) => {
+    // Handle the nested response structure
+    const courseData = response.data.data || response.data;
+    return {
+      id: courseData.course_id,
+      name: courseData.course_name,
+      description: courseData.description,
+      semester: courseData.semester,
+      image: courseData.image,
+      createdAt: courseData.created_at,
+    };
+  });
 
-// Update an existing course
-export const updateCourse = (courseId: number, course: Partial<Course>): Promise<Course> =>
-  apiClient.put(`/courses/${courseId}`, course).then((response) => response.data);
+// Update a course - updated to use FormData and handle the response structure
+export const updateCourse = (id: number, formData: FormData): Promise<Course> =>
+  apiClient.put(`/courses/${id}`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  }).then((response) => {
+    // Handle the nested response structure
+    const courseData = response.data.data || response.data;
+    return {
+      id: courseData.course_id,
+      name: courseData.course_name,
+      description: courseData.description,
+      semester: courseData.semester,
+      image: courseData.image,
+      createdAt: courseData.created_at,
+    };
+  });
 
-// Delete a course
-export const deleteCourse = (courseId: number): Promise<void> =>
-  apiClient.delete(`/courses/${courseId}`).then(() => undefined);
+// Delete a course - handle the status response
+export const deleteCourse = (id: number): Promise<void> =>
+  apiClient.delete(`/courses/${id}`).then((response) => {
+    // Check if the deletion was successful
+    if (!response.data.status) {
+      throw new Error(response.data.message || 'Failed to delete course');
+    }
+    return undefined;
+  });
 
 // Fetch subjects for a specific course
 export const fetchSubjectsByCourse = (courseId: number): Promise<Subject[]> =>
@@ -180,17 +241,32 @@ export const approveReview = (id: number): Promise<void> =>
 export const rejectReview = (id: number): Promise<void> =>
   apiClient.post(`/reviews/${id}/reject`).then(() => undefined);
 
-// signup user
-export const createUser = (user: Partial<User>): Promise<Subject> =>
-  apiClient.post("/register", mapUserToApi(user)).then((response) => mapUserToApi(response.data));
 
+// ------------ User Management ------------ //
 
-const mapLoginCredentialsToApi = (credentials: Partial<LoginCredentials>): any => ({
-  email: credentials.email,
-  password: credentials.password,
-});
+// Create a new user (registration)
+export const createUser = (userData: Partial<User>): Promise<User> => 
+  apiClient.post('/signup', {
+    name: userData.name,
+    email: userData.email,
+    password: userData.password,
+    // Add any other required fields for registration
+  }).then(response => {
+    // Handle the API response structure
+    if (response.data.status && response.data.data) {
+      return mapUserFromApi(response.data.data);
+    }
+    // If the API returns a different structure, adjust accordingly
+    return mapUserFromApi(response.data);
+  });
 
-export const loginUser = (credentials: Partial<LoginCredentials>): Promise<User> =>
-  apiClient
-    .post("/login", mapLoginCredentialsToApi(credentials))
-    .then((response) => mapLoginCredentialsToApi(response.data)); 
+// This can be used to fetch the current user's profile
+export const fetchUserProfile = (): Promise<User> =>
+  apiClient.get('/user/profile').then(response => {
+    // Handle the API response structure
+    if (response.data.status && response.data.data) {
+      return mapUserFromApi(response.data.data);
+    }
+    // If the API returns a different structure, adjust accordingly
+    return mapUserFromApi(response.data);
+  });

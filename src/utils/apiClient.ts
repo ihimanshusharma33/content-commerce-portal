@@ -1,8 +1,12 @@
 import axios from "axios";
+import { clearAuth } from "../services/authService";
 
 // Create an Axios instance
 const apiClient = axios.create({
   baseURL: "https://amplifilearn.com/api/public/api", // Replace with your API base URL
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
 // Request interceptor
@@ -23,11 +27,19 @@ apiClient.interceptors.request.use(
 
 // Response interceptor
 apiClient.interceptors.response.use(
-  (response) => {
-    // Handle successful responses
-    return response.data; // Return only the data from the response
-  },
+  (response) => response,
   (error) => {
+    // Handle 401 Unauthorized errors
+    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+      console.log("Authentication error detected");
+
+      // Clear authentication data
+      clearAuth();
+
+      // Redirect to sign-in page
+      window.location.href = "/signin";
+    }
+
     // Handle errors globally
     if (error.response) {
       // Server responded with a status other than 2xx

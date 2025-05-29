@@ -16,6 +16,7 @@ import AdminDashboard from "./admin/AdminDashoboard";
 import PDFViewerPage from "./pages/PDFViewerPage";
 import MyCourses from "./pages/MyCourses";
 import PaymentPage from "./pages/PaymentPage";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -34,8 +35,20 @@ const App = () => (
           <Route path="/signup" element={<SignUp />} />
           <Route path="/my-courses" element={<MyCourses />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
-          <Route path="/student-dashboard" element={<StudentDashboard/>}/>
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route
+            path="/admin-dashboard"
+            element={
+              <AdminDashboard />
+            }
+          />
+          <Route
+            path="/student-dashboard"
+            element={
+              <ProtectedRoute>
+                <StudentDashboard />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/pdf/:pdfId" element={<PDFViewerPage />} />
           <Route path="/pdf-viewer" element={<PDFViewerPage />} />
           <Route path="/checkout/:courseId" element={<PaymentPage />} />

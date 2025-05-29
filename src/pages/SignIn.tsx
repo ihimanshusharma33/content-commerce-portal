@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +14,8 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { loginUser } from '@/services/apiService';
+import { clearAuth, setToken, setupAuthHeader } from '../services/authService';
+import apiClient from '../utils/apiClient';
 
 const SignIn = () => {
   const [email, setEmail] = useState('');
@@ -22,46 +23,61 @@ const SignIn = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const location = useLocation();
 
-  const redirectTo = (location.state as { redirectTo?: string })?.redirectTo || '/';
+  // Clear auth data when the sign-in page is loaded
+  useEffect(() => {
+    clearAuth();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // Admin login local check
-      if (email === 'admin@lms.com' && password === 'admin123') {
-        toast({
-          title: "Admin login successful",
-          description: "Welcome back, Admin!",
-        });
-        window.dispatchEvent(new Event('storage'));
-        navigate('/admin-dashboard');
-        return;
-      }
-
-      const data = await loginUser({ email, password });
-
-      toast({
-        title: "Login successful",
-        description: `Welcome back, ${data.name || 'User'}!`,
+      // Call the actual API endpoint
+      const response = await apiClient.post('/login', {
+        email,
+        password
       });
 
-      if ('token' in data && typeof data.token === 'string') {
-        localStorage.setItem('authToken', data.token);
+      // Check if the login was successful
+      if (response.data.status && response.data.data.token) {
+        // Store the token
+        const token = response.data.data.token;
+        setToken(token);
+        setupAuthHeader(token);
+
+        // Show success message
+        toast({
+          title: "Login successful",
+          description: response.data.message || "Welcome back!",
+        });
+
+        // Determine where to navigate based on user role (which might be extracted from the token)
+        // For now, assume we redirect to a default dashboard
+        if (email === 'admin@lms.com') {
+          navigate('/admin-dashboard');
+        } else {
+          navigate('/student-dashboard');
+        }
+      } else {
+        // Handle unsuccessful login but with a 200 response
+        toast({
+          title: "Login failed",
+          description: response.data.message || "Invalid credentials. Please try again.",
+          variant: "destructive",
+        });
       }
-
-      window.dispatchEvent(new Event('storage'));
-      navigate(redirectTo);
-    } catch (error: unknown) {
-      let message = "Please check your credentials and try again.";
-      if (error instanceof Error) message = error.message;
-
+    } catch (error: any) {
+      console.error('Login error:', error);
+      
+      // Extract and display the error message from the API response
+      const errorMessage = error.response?.data?.message || 
+                          "Unable to sign in. Please check your credentials and try again.";
+      
       toast({
         title: "Login failed",
-        description: message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -70,8 +86,8 @@ const SignIn = () => {
   };
 
   const fillSampleCredentials = () => {
-    setEmail('user@example.com');
-    setPassword('password');
+    setEmail('tanyamishra1909@gmail.com');
+    setPassword('tanya2005');
   };
 
   const fillAdminCredentials = () => {

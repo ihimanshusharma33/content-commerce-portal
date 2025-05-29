@@ -17,31 +17,19 @@ interface LoginResponse {
 }
 
 // Login function
-export const login = async (email: string, password: string): Promise<any> => {
+export const login = async (email: string, password: string): Promise<LoginResponse> => {
     try {
         const response = await apiClient.post('/login', { email, password });
-        
-        if (response.data.status && response.data.data.token) {
-            const token = response.data.data.token;
-            
-            // Store the token
-            setToken(token);
-            
-            // Extract user info from token
-            const decodedToken = decodeToken(token);
-            
-            // Store user data
-            if (decodedToken) {
-                setUserData(decodedToken);
-            }
-            
-            // Set up auth header
-            setupAuthHeader(token);
-            
-            return response.data;
-        }
-        
-        throw new Error(response.data.message || 'Login failed');
+
+        // Store token and user data
+        const { token, user } = response.data;
+        setToken(token);
+        setUserData(user);
+
+        // Set token for all future requests
+        setupAuthHeader(token);
+
+        return response.data;
     } catch (error) {
         clearAuth();
         throw error;
@@ -104,23 +92,4 @@ export const isAuthenticated = (): boolean => {
 export const isAdmin = (): boolean => {
     const user = getUserData();
     return user?.role === 'admin';
-};
-
-// Add this function to decode JWT token and extract user information
-export const decodeToken = (token: string): any => {
-  try {
-    // JWT tokens are in format: header.payload.signature
-    const base64Payload = token.split('.')[1];
-    const payload = Buffer.from(base64Payload, 'base64').toString('ascii');
-    return JSON.parse(payload);
-  } catch (error) {
-    console.error('Error decoding token:', error);
-    return null;
-  }
-};
-
-// Function to get user name from stored data
-export const getUserName = (): string => {
-  const userData = getUserData();
-  return userData?.name || 'User';
 };

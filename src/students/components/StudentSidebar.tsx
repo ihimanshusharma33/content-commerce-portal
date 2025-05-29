@@ -41,7 +41,9 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
           <ChevronLeft className={`h-5 w-5 transform transition-transform ${!isSidebarOpen && 'rotate-180'}`} />
         </button>
       </div>
-
+      <div>
+        
+      </div>
       <div className="p-2 w-full bg-white">
         {items.map((item) => (
           <button

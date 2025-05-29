@@ -16,6 +16,8 @@ interface StudentReviewsProps {
 
 const StudentReviews = ({ reviews }: StudentReviewsProps) => {
   const navigate = useNavigate();
+
+  
   
   return (
     <>

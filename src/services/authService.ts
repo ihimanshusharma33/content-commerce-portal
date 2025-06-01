@@ -1,126 +1,169 @@
 import apiClient from "../utils/apiClient";
 
-
-// Token key for localStorage
-const TOKEN_KEY = 'auth_token';
-const USER_KEY = 'user_data';
-
-// Interface for the login response
-interface LoginResponse {
-    token: string;
-    user: {
-        id: number;
-        email: string;
-        role: 'admin' | 'student';
-        name: string;
-    };
+// Interface for the user data
+export interface User {
+  id: number;
+  email: string;
+  name: string;
+  role: 'admin' | 'student';
 }
 
-// Login function
-export const login = async (email: string, password: string): Promise<any> => {
-    try {
-        const response = await apiClient.post('/login', { email, password });
-        
-        if (response.data.status && response.data.data.token) {
-            const token = response.data.data.token;
-            
-            // Store the token
-            setToken(token);
-            
-            // Extract user info from token
-            const decodedToken = decodeToken(token);
-            
-            // Store user data
-            if (decodedToken) {
-                setUserData(decodedToken);
-            }
-            
-            // Set up auth header
-            setupAuthHeader(token);
-            
-            return response.data;
-        }
-        
-        throw new Error(response.data.message || 'Login failed');
-    } catch (error) {
-        clearAuth();
-        throw error;
-    }
-};
-
-// Logout function
-export const logout = (): void => {
-    clearAuth();
-    window.location.href = '/signin'; // Redirect to sign-in page
-};
-
-// Set auth token in localStorage
-export const setToken = (token: string): void => {
-    localStorage.setItem(TOKEN_KEY, token);
-};
-
-// Get auth token from localStorage
-export const getToken = (): string | null => {
-    return localStorage.getItem(TOKEN_KEY);
-};
-
-// Set user data in localStorage
-export const setUserData = (user: any): void => {
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
-};
-
-// Get user data from localStorage
-export const getUserData = (): any => {
-    const userData = localStorage.getItem(USER_KEY);
-    return userData ? JSON.parse(userData) : null;
-};
-
-// Clear auth data (both token and user data)
-export const clearAuth = (): void => {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-    delete apiClient.defaults.headers.common['Authorization'];
-};
-
-// Setup auth header for all requests
-export const setupAuthHeader = (token: string): void => {
-    apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-};
-
-// Initialize auth header from localStorage on app startup
-export const initializeAuth = (): void => {
-    const token = getToken();
-    if (token) {
-        setupAuthHeader(token);
-    }
-};
-
-// Check if user is authenticated
-export const isAuthenticated = (): boolean => {
-    return !!getToken();
-};
-
-// Check if user is admin
-export const isAdmin = (): boolean => {
-    const user = getUserData();
-    return user?.role === 'admin';
-};
-
-// Add this function to decode JWT token and extract user information
-export const decodeToken = (token: string): any => {
+/**
+ * Attempts to log in with the provided credentials
+ * The JWT token will be stored both in localStorage and sent with requests via Authorization header
+ */
+export const login = async (email: string, password: string): Promise<void> => {
   try {
-    // JWT tokens are in format: header.payload.signature
-    const base64Payload = token.split('.')[1];
-    const payload = Buffer.from(base64Payload, 'base64').toString('ascii');
-    return JSON.parse(payload);
-  } catch (error) {
-    console.error('Error decoding token:', error);
-    return null;
+    const response = await apiClient.post('/login', { email, password });
+    
+    if (!response.data || !response.data.status) {
+      throw new Error(response.data?.message || 'Login failed');
+    }
+    
+    // Store token in localStorage
+    if (response.data.data && response.data.data.token) {
+      localStorage.setItem('auth_token', response.data.data.token);
+      localStorage.setItem('is_authenticated', 'true');
+      
+      // Store user role - map 'user' role to 'student' if needed
+      const role = response.data.data.role === 'admin' ? 'admin' : 'student';
+      localStorage.setItem('user_role', role);
+      
+      // Store user ID if available
+      if (response.data.data.user_id) {
+        localStorage.setItem('user_id', response.data.data.user_id.toString());
+      }
+      
+      // Set the token in the Authorization header for future requests
+      apiClient.defaults.headers.common['Authorization'] = `Bearer ${response.data.data.token}`;
+    } else {
+      throw new Error('No authentication token received');
+    }
+    
+    return;
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.message || error.message || 'Login failed';
+    throw new Error(errorMessage);
   }
 };
 
-// Function to get user name from stored data
-export const getUserName = (): string => {
-  const userData = getUserData();
-  return userData?.name || 'User';
+/**
+ * Gets the current authenticated user information
+ */
+export const getUserInfo = async (): Promise<User> => {
+  try {
+    // Check if we have a token
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+    
+    // Ensure the token is in the Authorization header
+    apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    
+    // Attempt to get user info
+    const response = await apiClient.get('/me');
+    
+    // If we already have some user info in localStorage, we can construct a user object
+    // even if the API call fails or is still in progress
+    if (!response.data || response.status !== 200) {
+      // Try to build a minimal user object from localStorage
+      const userId = localStorage.getItem('user_id');
+      const userRole = localStorage.getItem('user_role');
+      
+      if (userId && userRole) {
+        // Return a basic user object based on localStorage data
+        return {
+          id: parseInt(userId),
+          email: '',  // We don't have this info in localStorage
+          name: '',   // We don't have this info in localStorage
+          role: userRole === 'admin' ? 'admin' : 'student'
+        };
+      }
+      
+      throw new Error('Failed to get user information');
+    }
+    
+    // If the API response includes the user info directly
+    if (response.data.data && response.data.data.user) {
+      return {
+        id: response.data.data.user.id,
+        email: response.data.data.user.email || '',
+        name: response.data.data.user.name || '',
+        role: response.data.data.user.role === 'admin' ? 'admin' : 'student'
+      };
+    }
+    
+    // If the API response is the user info itself
+    return {
+      id: response.data.id,
+      email: response.data.email || '',
+      name: response.data.name || '',
+      role: response.data.role === 'admin' ? 'admin' : 'student'
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Logs out the current user by clearing the JWT token
+ */
+export const logout = async (): Promise<void> => {
+  try {
+    // Get the token to include in the logout request
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      // Make sure the token is in the Authorization header
+      apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      await apiClient.post('/logout');
+    }
+  } catch (error) {
+    console.error('Logout error:', error);
+  } finally {
+    // Always clear the local auth state
+    clearAuth();
+    // Remove Authorization header
+    delete apiClient.defaults.headers.common['Authorization'];
+  }
+};
+
+/**
+ * Checks if user is authenticated
+ * We'll use the context state for this, but this is kept for compatibility
+ */
+export const isAuthenticated = (): boolean => {
+  try {
+    // Use localStorage instead of sessionStorage for persistence across sessions
+    return localStorage.getItem('is_authenticated') === 'true';
+  } catch (e) {
+    return false;
+  }
+};
+
+/**
+ * Checks if user is an admin
+ * We'll use the context state for this, but this is kept for compatibility
+ */
+export const isAdmin = (): boolean => {
+  try {
+    return localStorage.getItem('user_role') === 'admin';
+  } catch (e) {
+    return false;
+  }
+};
+
+/**
+ * Clears auth state - kept for compatibility with existing code
+ */
+export const clearAuth = (): void => {
+  // Clear localStorage auth-related items
+  localStorage.removeItem('is_authenticated');
+  localStorage.removeItem('user_role');
+  localStorage.removeItem('user_id');
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('auth_last_check');
+  
+  // Remove Authorization header
+  delete apiClient.defaults.headers.common['Authorization'];
 };

@@ -17,6 +17,7 @@ import PDFViewerPage from "./pages/PDFViewerPage";
 import MyCourses from "./pages/MyCourses";
 import PaymentPage from "./pages/PaymentPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
 
@@ -25,36 +26,38 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/courses" element={<CourseList />} />
-          <Route path="/course/:id" element={<CourseDetail />} />
-          <Route path="/course/:id/content" element={<CourseContent />} />
-          <Route path="/signin" element={<SignIn />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/my-courses" element={<MyCourses />} />
-          <Route path="/payment-success" element={<PaymentSuccess />} />
-          <Route
-            path="/admin-dashboard"
-            element={
-              <AdminDashboard />
-            }
-          />
-          <Route
-            path="/student-dashboard"
-            element={
-              <ProtectedRoute>
-                <StudentDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/pdf/:pdfId" element={<PDFViewerPage />} />
-          <Route path="/pdf-viewer" element={<PDFViewerPage />} />
-          <Route path="/checkout/:courseId" element={<PaymentPage />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/courses" element={<CourseList />} />
+            <Route path="/course/:id" element={<CourseDetail />} />
+            <Route path="/course/:id/content" element={<CourseContent />} />
+            <Route path="/signin" element={<SignIn />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/my-courses" element={<MyCourses />} />
+            <Route path="/payment-success" element={<PaymentSuccess />} />
+            <Route
+              path="/admin-dashboard"
+              element={
+                <AdminDashboard />
+              }
+            />
+            <Route
+              path="/student-dashboard"
+              element={
+                <ProtectedRoute>
+                  <StudentDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/pdf/:pdfId" element={<PDFViewerPage />} />
+            <Route path="/pdf-viewer" element={<PDFViewerPage />} />
+            <Route path="/checkout/:courseId" element={<PaymentPage />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

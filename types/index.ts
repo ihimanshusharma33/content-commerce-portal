@@ -26,6 +26,27 @@ export interface Chapter {
   file_size?: number;
 }
 
+export interface BaseReview {
+  id: number;
+  user_id: number;
+  rating: number;
+  content: string;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  updated_at: string;
+  student_name?: string;
+}
+
+export interface CourseReview extends BaseReview {
+  course_id: number;
+  course_name?: string;
+}
+
+export interface SubjectReview extends BaseReview {
+  subject_id: number;
+  subject_name?: string;
+}
+
 export interface Review {
   id: number;
   courseId: number;

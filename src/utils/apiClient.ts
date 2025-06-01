@@ -7,16 +7,13 @@ const apiClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true, // Enable sending cookies with requests
 });
 
 // Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
-    // Add common headers (e.g., Authorization token)
-    const token = localStorage.getItem("authToken"); // Replace with your token logic
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    // No need to manually set Authorization header as JWT will be in HttpOnly cookie
     return config;
   },
   (error) => {

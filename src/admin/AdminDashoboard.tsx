@@ -138,11 +138,7 @@ const AdminDashboard: React.FC = () => {
           
           {/* Reviews Section */}
           {activeSection === "reviews" && (
-            <ReviewsSection 
-              reviews={reviews}
-              onApproveReview={handleApproveReview}
-              onRejectReview={handleRejectReview}
-            />
+            <ReviewsSection />
           )}
           
           {/* Transactions Section */}

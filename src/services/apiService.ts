@@ -1,5 +1,7 @@
 import apiClient from "../utils/apiClient";
 
+import { Transaction } from "../../types";
+
 export interface Course {
   id: number;
   name: string;
@@ -44,6 +46,16 @@ export interface User {
   role?: string;
   created_at?: string;
   updated_at?: string;
+}
+
+// Add this interface at the top with your other interfaces
+export interface Stats {
+  total_users: number;
+  total_purchasing_users: number;
+  total_purchases: number;
+  total_courses: number;
+  pending_course_reviews: number;
+  pending_subject_reviews: number;
 }
 
 // Utility function to map snake_case to camelCase for Subject
@@ -95,6 +107,9 @@ const mapReviewToApi = (review: Partial<Review>): any => ({
   rating: review.rating,
 
 });
+
+
+// Course Management
 
 // Add this mapping function with other mappers
 const mapUserFromApi = (user: any): User => ({
@@ -269,4 +284,34 @@ export const fetchUserProfile = (): Promise<User> =>
     }
     // If the API returns a different structure, adjust accordingly
     return mapUserFromApi(response.data);
+  });
+
+// ------------ Purchase History ------------ //
+
+
+export const getPurchaseHistory = async (): Promise<Transaction[]> => {
+  try {
+    const token = localStorage.getItem('auth_token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    
+    const response = await apiClient.get('/purchase-history', { headers });
+    console.log('Purchase history response:', response);
+    
+    if (response.data && response.data.data) {
+      return response.data.data;
+    }
+    return [];
+  } catch (error) {
+    console.error('Error fetching purchase history:', error);
+    return [];
+  }
+};
+
+// Replace the incomplete fetchStatistics function
+export const fetchStatistics = (): Promise<Stats> => 
+  apiClient.get('/statistics').then((response) => {
+    if (response.data && response.data.status) {
+      return response.data.data;
+    }
+    throw new Error(response.data.message || 'Failed to fetch statistics');
   });

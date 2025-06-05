@@ -5,9 +5,31 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { fetchCourses } from "../../../services/apiService";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import apiClient from "../../../utils/apiClient";
-import { Loader2, FileText, File } from "lucide-react";
+import {
+  Loader2,
+  FileText,
+  File,
+  BookOpen,
+  Plus,
+  Pencil,
+  Trash2,
+  ChevronRight,
+  GraduationCap,
+  BookCopy,
+  Search,
+  BookmarkIcon,
+  Calendar,
+  Clock,
+  X,
+  AlertCircle
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { toast } from "@/components/ui/use-toast";
 
 // Define interfaces based on the API response
 interface CourseOption {
@@ -37,16 +59,16 @@ const ChapterManager: React.FC = () => {
   const [courseOptions, setCourseOptions] = useState<CourseOption[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
   const [loadingCourses, setLoadingCourses] = useState(true);
-  
+
   // Subject selection state
   const [subjectOptions, setSubjectOptions] = useState<SubjectOption[]>([]);
   const [selectedSubjectId, setSelectedSubjectId] = useState<number | null>(null);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
-  
+
   // Chapter state
   const [chapters, setChapters] = useState<ChapterData[]>([]);
   const [loadingChapters, setLoadingChapters] = useState(false);
-  
+
   // Form state
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedChapter, setSelectedChapter] = useState<ChapterData | null>(null);
@@ -68,7 +90,14 @@ const ChapterManager: React.FC = () => {
         }));
         setCourseOptions(options);
       })
-      .catch((error) => console.error("Failed to fetch courses:", error))
+      .catch((error) => {
+        console.error("Failed to fetch courses:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load courses",
+          variant: "destructive"
+        });
+      })
       .finally(() => setLoadingCourses(false));
   }, []);
 
@@ -78,7 +107,7 @@ const ChapterManager: React.FC = () => {
       setLoadingSubjects(true);
       setSelectedSubjectId(null); // Reset subject selection
       setChapters([]); // Reset chapters
-      
+
       apiClient.get(`/courses/${selectedCourseId}`)
         .then(response => {
           if (response.data && response.data.status && response.data.data.subjects) {
@@ -86,11 +115,21 @@ const ChapterManager: React.FC = () => {
           } else {
             console.error("Unexpected API response:", response.data);
             setSubjectOptions([]);
+            toast({
+              title: "Error",
+              description: "Unexpected data format from server",
+              variant: "destructive"
+            });
           }
         })
         .catch(error => {
           console.error("Failed to fetch subjects:", error);
           setSubjectOptions([]);
+          toast({
+            title: "Error",
+            description: "Failed to load subjects",
+            variant: "destructive"
+          });
         })
         .finally(() => setLoadingSubjects(false));
     } else {
@@ -103,7 +142,7 @@ const ChapterManager: React.FC = () => {
   useEffect(() => {
     if (selectedSubjectId) {
       setLoadingChapters(true);
-      
+
       apiClient.get(`/chapters/subject/${selectedSubjectId}`)
         .then(response => {
           if (response.data && response.data.status) {
@@ -111,11 +150,21 @@ const ChapterManager: React.FC = () => {
           } else {
             console.error("Unexpected API response:", response.data);
             setChapters([]);
+            toast({
+              title: "Error",
+              description: "Unexpected data format from server",
+              variant: "destructive"
+            });
           }
         })
         .catch(error => {
           console.error("Failed to fetch chapters:", error);
           setChapters([]);
+          toast({
+            title: "Error",
+            description: "Failed to load chapters",
+            variant: "destructive"
+          });
         })
         .finally(() => setLoadingChapters(false));
     } else {
@@ -125,6 +174,11 @@ const ChapterManager: React.FC = () => {
 
   const handleAddChapter = async () => {
     if (!selectedSubjectId || !chapterName.trim()) {
+      toast({
+        title: "Missing information",
+        description: "Please provide a chapter name",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -134,7 +188,7 @@ const ChapterManager: React.FC = () => {
       formData.append('chapter_name', chapterName);
       formData.append('subject_id', selectedSubjectId.toString());
       formData.append('content', chapterContent);
-      
+
       if (chapterFile) {
         formData.append('file', chapterFile);
       }
@@ -149,14 +203,29 @@ const ChapterManager: React.FC = () => {
         const newChapter = response.data.data;
         setChapters(prev => [...prev, newChapter]);
         closeForm();
+        toast({
+          title: "Success",
+          description: "Chapter added successfully",
+          variant: "default"
+        });
       }
     } catch (error) {
       console.error("Failed to create chapter:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add chapter",
+        variant: "destructive"
+      });
     }
   };
 
   const handleUpdateChapter = async () => {
     if (!selectedChapter || !chapterName.trim()) {
+      toast({
+        title: "Missing information",
+        description: "Please provide a chapter name",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -166,7 +235,7 @@ const ChapterManager: React.FC = () => {
       formData.append('chapter_name', chapterName);
       formData.append('subject_id', selectedSubjectId!.toString());
       formData.append('content', chapterContent);
-      
+
       if (chapterFile) {
         formData.append('file', chapterFile);
       }
@@ -179,15 +248,25 @@ const ChapterManager: React.FC = () => {
 
       if (response.data.status) {
         const updatedChapter = response.data.data;
-        setChapters(prev => 
-          prev.map(chapter => 
+        setChapters(prev =>
+          prev.map(chapter =>
             chapter.chapter_id === selectedChapter.chapter_id ? updatedChapter : chapter
           )
         );
         closeForm();
+        toast({
+          title: "Success",
+          description: "Chapter updated successfully",
+          variant: "default"
+        });
       }
     } catch (error) {
       console.error("Failed to update chapter:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update chapter",
+        variant: "destructive"
+      });
     }
   };
 
@@ -198,12 +277,22 @@ const ChapterManager: React.FC = () => {
 
     try {
       const response = await apiClient.delete(`/chapters/${chapterId}`);
-      
+
       if (response.data.status) {
         setChapters(prev => prev.filter(chapter => chapter.chapter_id !== chapterId));
+        toast({
+          title: "Success",
+          description: "Chapter deleted successfully",
+          variant: "default"
+        });
       }
     } catch (error) {
       console.error("Failed to delete chapter:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete chapter",
+        variant: "destructive"
+      });
     }
   };
 
@@ -248,138 +337,162 @@ const ChapterManager: React.FC = () => {
     }
   };
 
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    }).format(date);
+  };
+
+  // Get subject name by id
+  const getSubjectName = (subjectId: number): string => {
+    const subject = subjectOptions.find(s => s.subject_id === subjectId);
+    return subject ? subject.subject_name : 'Unknown Subject';
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col space-y-2">
-        <h3 className="text-xl font-semibold">Chapter Management</h3>
-        <p className="text-sm text-gray-500">Manage chapters for subjects across different courses</p>
-      </div>
+    <div className="">
 
-      {/* Course Selection */}
-      <div className="w-full">
-        <Label htmlFor="course-select">Select Course</Label>
-        <Select
-          value={selectedCourseId?.toString() || ""}
-          onValueChange={(value) => setSelectedCourseId(Number(value))}
-          disabled={loadingCourses}
-        >
-          <SelectTrigger id="course-select" className="w-full">
-            <SelectValue placeholder={loadingCourses ? "Loading courses..." : "Select a course"} />
-          </SelectTrigger>
-          <SelectContent>
-            {courseOptions.map((option) => (
-              <SelectItem key={option.id} value={option.id.toString()}>
-                {option.displayName}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {/* Course and Subject Selection */}
+      <div className="overflow-hidden ">
+        <div className="">
+          <div className="flex justify-start gap-8 items-center mb-4">
+            <div className="w-1/3">
+              <Label htmlFor="course-select" className="text-sm font-semibold mb-1 block text-gray-700">
+                Course
+              </Label>
+              <Select
+                value={selectedCourseId?.toString() || ""}
+                onValueChange={(value) => setSelectedCourseId(Number(value))}
+                disabled={loadingCourses}
+              >
+                <SelectTrigger id="course-select" className="w-full border-blue-200 focus:ring-blue-500">
+                  <SelectValue placeholder={loadingCourses ? "Loading courses..." : "Select a course"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {courseOptions.map((option) => (
+                    <SelectItem key={option.id} value={option.id.toString()}>
+                      {option.displayName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {loadingCourses && (
+                <div className="flex items-center mt-2 text-blue-600 text-sm">
+                  <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                  Loading available courses...
+                </div>
+              )}
+            </div>
 
-      {/* Subject Selection */}
-      {selectedCourseId && (
-        <div className="w-full">
-          <Label htmlFor="subject-select">Select Subject</Label>
-          <Select
-            value={selectedSubjectId?.toString() || ""}
-            onValueChange={(value) => setSelectedSubjectId(Number(value))}
-            disabled={loadingSubjects}
-          >
-            <SelectTrigger id="subject-select" className="w-full">
-              <SelectValue placeholder={loadingSubjects ? "Loading subjects..." : "Select a subject"} />
-            </SelectTrigger>
-            <SelectContent>
-              {subjectOptions.map((subject) => (
-                <SelectItem key={subject.subject_id} value={subject.subject_id.toString()}>
-                  {subject.subject_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          {loadingSubjects && (
-            <div className="flex items-center justify-center mt-4">
-              <Loader2 className="h-5 w-5 animate-spin mr-2" />
-              <span className="text-sm text-gray-500">Loading subjects...</span>
-            </div>
-          )}
-          
-          {!loadingSubjects && subjectOptions.length === 0 && selectedCourseId && (
-            <div className="mt-4 p-4 border rounded-md bg-amber-50 text-amber-800">
-              <p>No subjects found for this course. Please add subjects first.</p>
-            </div>
-          )}
+            {selectedCourseId && (
+              <div className="w-1/3">
+                <Label htmlFor="subject-select" className="text-sm font-medium mb-1 block text-gray-700">
+                  Subject
+                </Label>
+                <Select
+                  value={selectedSubjectId?.toString() || ""}
+                  onValueChange={(value) => setSelectedSubjectId(Number(value))}
+                  disabled={loadingSubjects}
+                >
+                  <SelectTrigger id="subject-select" className="w-full border-blue-200 focus:ring-blue-500">
+                    <SelectValue placeholder={loadingSubjects ? "Loading subjects..." : "Select a subject"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subjectOptions.map((subject) => (
+                      <SelectItem key={subject.subject_id} value={subject.subject_id.toString()}>
+                        {subject.subject_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {loadingSubjects && (
+                  <div className="flex items-center mt-2 text-blue-600 text-sm">
+                    <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                    Loading available subjects...
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      )}
+      </div>
 
       {/* Chapters List and Management */}
       {selectedSubjectId && (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h4 className="font-medium">Chapters</h4>
-            <Button onClick={() => openForm()} size="sm">
-              Add New Chapter
-            </Button>
+        <div className="overflow-hidden ">
+          <div className="flex justify-end items-center p-5 border-b">
+          <Button onClick={() => openForm()} size="sm" className="bg-primary text-white hover:bg-blue-700">
+            <Plus className="h-4 w-4 mr-2" />
+            Add New Chapter
+          </Button>
           </div>
+          <div className="p-5">
+            {loadingChapters ? (
+              <div className="flex justify-center items-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <span className="ml-2">Loading chapters...</span>
+              </div>
+            ) : chapters.length === 0 ? (
+              <div className="text-center py-8 border rounded-md bg-gray-50">
+                <p className="text-gray-500">No chapters found for this subject.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {chapters.map((chapter) => (
+                  <Card key={chapter.chapter_id} className="overflow-hidden">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-start space-x-3">
+                          <div className="bg-blue-100 p-2 rounded-md">
+                            <FileText className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <h5 className="font-medium">{chapter.chapter_name}</h5>
+                            <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                              {chapter.content ? (
+                                <span>{chapter.content.substring(0, 100)}...</span>
+                              ) : (
+                                <span className="text-gray-400 italic">No content</span>
+                              )}
+                            </p>
 
-          {loadingChapters ? (
-            <div className="flex justify-center items-center py-8">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              <span className="ml-2">Loading chapters...</span>
-            </div>
-          ) : chapters.length === 0 ? (
-            <div className="text-center py-8 border rounded-md bg-gray-50">
-              <p className="text-gray-500">No chapters found for this subject.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {chapters.map((chapter) => (
-                <Card key={chapter.chapter_id} className="overflow-hidden">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-start space-x-3">
-                        <div className="bg-blue-100 p-2 rounded-md">
-                          <FileText className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <div>
-                          <h5 className="font-medium">{chapter.chapter_name}</h5>
-                          <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                            {chapter.content ? (
-                              <span>{chapter.content.substring(0, 100)}...</span>
-                            ) : (
-                              <span className="text-gray-400 italic">No content</span>
+                            {chapter.file_path && (
+                              <div className="mt-2 flex items-center text-sm text-blue-600">
+                                <File className="h-4 w-4 mr-1" />
+                                <a
+                                  href={chapter.file_path}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="hover:underline"
+                                >
+                                  View attachment
+                                </a>
+                              </div>
                             )}
-                          </p>
-                          
-                          {chapter.file_path && (
-                            <div className="mt-2 flex items-center text-sm text-blue-600">
-                              <File className="h-4 w-4 mr-1" />
-                              <a 
-                                href={chapter.file_path} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="hover:underline"
-                              >
-                                View attachment
-                              </a>
-                            </div>
-                          )}
+                          </div>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button size="sm" variant="outline" onClick={() => openForm(chapter)}>
+                            <Pencil className="h-4 w-4 mr-1" />
+                            Edit
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => handleDeleteChapter(chapter.chapter_id)}>
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Delete
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex space-x-2">
-                        <Button size="sm" variant="outline" onClick={() => openForm(chapter)}>
-                          Edit
-                        </Button>
-                        <Button size="sm" variant="destructive" onClick={() => handleDeleteChapter(chapter.chapter_id)}>
-                          Delete
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -390,7 +503,7 @@ const ChapterManager: React.FC = () => {
             <h4 className="text-lg font-semibold mb-4">
               {selectedChapter ? "Edit Chapter" : "Add New Chapter"}
             </h4>
-            
+
             <div className="space-y-4">
               <div>
                 <Label htmlFor="chapter-name">Chapter Name</Label>
@@ -401,7 +514,7 @@ const ChapterManager: React.FC = () => {
                   placeholder="Enter chapter name"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="chapter-content">Content</Label>
                 <Textarea
@@ -416,7 +529,7 @@ const ChapterManager: React.FC = () => {
                   You can use simple formatting for content.
                 </p>
               </div>
-              
+
               <div>
                 <Label htmlFor="chapter-file">Attachment (PDF, DOCX, etc.)</Label>
                 <Input
@@ -435,10 +548,10 @@ const ChapterManager: React.FC = () => {
                 {selectedChapter?.file_path && !chapterFile && (
                   <div className="mt-2 flex items-center">
                     <p className="text-sm text-gray-500 mr-2">Current file:</p>
-                    <a 
-                      href={selectedChapter.file_path} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
+                    <a
+                      href={selectedChapter.file_path}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-sm text-blue-600 hover:underline flex items-center"
                     >
                       <File className="h-4 w-4 mr-1" />
@@ -447,14 +560,15 @@ const ChapterManager: React.FC = () => {
                   </div>
                 )}
               </div>
-              
+
               <div className="flex justify-end space-x-3 mt-6">
                 <Button variant="outline" onClick={closeForm}>
                   Cancel
                 </Button>
-                <Button 
+                <Button
                   onClick={handleAddOrUpdateChapter}
                   disabled={!chapterName.trim()}
+                  className="bg-blue-600 text-white hover:bg-blue-700"
                 >
                   {selectedChapter ? "Update Chapter" : "Add Chapter"}
                 </Button>

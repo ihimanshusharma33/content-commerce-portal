@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { fetchStatistics } from '@/services/apiService';
 import Sidebar from './components/Sidebar';
 import MobileHeader from './components/MobileHeader';
 import MobileMenu from './components/MobileMenu';
@@ -7,7 +8,6 @@ import DashboardSection from './sections/DashboardSection';
 import CoursesSection from './sections/CoursesSection';
 import ReviewsSection from './sections/ReviewsSection';
 import TransactionsSection from './sections/TransactionsSection';
-import { mockStats, mockCourses, mockReviews, mockTransactions } from './data/mockData';
 import { X } from "lucide-react";
 
 import {
@@ -20,6 +20,28 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
+// Define Stats interface to match the API response structure
+export interface Stats {
+  total_users: number;
+  new_users_today: number;
+  total_users_this_week: number;
+  total_users_this_month: number;
+  total_purchasing_users: number;
+  total_revenue: string;
+  total_failed_transactions: number;
+  total_pending_transactions: number;
+  total_success_purchase_today: number;
+  total_purchases: number;
+  total_revenue_today: string;
+  total_revenue_this_week: string;
+  total_revenue_this_month: string;
+  total_courses: number;
+  total_subjects: number;
+  total_chapters: number;
+  pending_course_reviews: number;
+  pending_subject_reviews: number;
+}
+
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("dashboard");
@@ -30,36 +52,38 @@ const AdminDashboard: React.FC = () => {
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
   
   // Stats for dashboard
-  const [stats, setStats] = useState(mockStats);
-  const [courses, setCourses] = useState(mockCourses);
-  const [reviews, setReviews] = useState(mockReviews);
-  const [transactions, setTransactions] = useState(mockTransactions);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
   
-  // Effect to simulate data loading
   useEffect(() => {
-    // In a real app, you would fetch this data from your API
-    setStats(mockStats);
-    setCourses(mockCourses);
-    setReviews(mockReviews);
-    setTransactions(mockTransactions);
+    const loadStatistics = async () => {
+      setIsLoadingStats(true);
+      try {
+        const statsData = await fetchStatistics();
+        setStats(statsData);
+      } catch (error) {
+        console.error("Failed to load statistics:", error);
+      } finally {
+        setIsLoadingStats(false);
+      }
+    };
+  
+    // Load data when component mounts
+    loadStatistics();
   }, []);
   
   // Handlers for various actions
   const handleDeleteCourse = (courseId: number) => {
-    setCourses(courses.filter(course => course.id !== courseId));
+    // Implementation will be updated when actual API is connected
     setIsDeleteDialogOpen(false);
   };
   
   const handleApproveReview = (reviewId: number) => {
-    setReviews(reviews.map(review => 
-      review.id === reviewId ? {...review, status: "approved"} : review
-    ));
+    // Implementation will be updated when actual API is connected
   };
   
   const handleRejectReview = (reviewId: number) => {
-    setReviews(reviews.map(review => 
-      review.id === reviewId ? {...review, status: "rejected"} : review
-    ));
+    // Implementation will be updated when actual API is connected
   };
 
   const handleLogout = () => {
@@ -83,7 +107,7 @@ const AdminDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col md:flex-row">
       {/* Sidebar - Desktop */}
-      <div className="md:block hidden">
+      <div className="md:block hidden md:sticky md:top-0 md:h-screen">
         <Sidebar 
           activeSection={activeSection} 
           setActiveSection={setActiveSection}
@@ -91,7 +115,7 @@ const AdminDashboard: React.FC = () => {
         />
       </div>
       
-      {/* Mobile Header */}
+      {/* Mobile Header - Fixed at top on mobile */}
       <MobileHeader 
         isMobileMenuOpen={isMobileMenuOpen}
         toggleMobileMenu={toggleMobileMenu}
@@ -111,29 +135,27 @@ const AdminDashboard: React.FC = () => {
         </div>
       )}
       
-      {/* Main Content */}
-      <div className="flex-1 overflow-x-hidden md:ml-0">
-        <div className="p-6 md:p-8 mt-14 md:mt-0">
+      {/* Main Content - Scrollable */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden h-screen md:h-auto">
+        <div className="p-6 md:p-8 mt-14 md:mt-0 min-h-[calc(100vh-56px)] md:min-h-screen">
           {/* Dashboard Section */}
           {activeSection === "dashboard" && (
             <DashboardSection 
               stats={stats}
-              courses={courses}
-              reviews={reviews}
+              isLoading={isLoadingStats}
               onSetActiveSection={setActiveSection}
               onApproveReview={handleApproveReview}
               onRejectReview={handleRejectReview}
               onViewAllCourses={() => setActiveSection("courses")}
               onViewAllReviews={() => setActiveSection("reviews")}
+              onViewAllTransactions={() => setActiveSection("transactions")}
+              onViewAllStudents={() => setActiveSection("students")}
             />
           )}
           
           {/* Courses Section */}
           {activeSection === "courses" && (
-            <CoursesSection 
-              courses={courses}
-              onDeleteCourse={handleDeleteCourseClick}
-            />
+            <CoursesSection />
           )}
           
           {/* Reviews Section */}
@@ -143,9 +165,7 @@ const AdminDashboard: React.FC = () => {
           
           {/* Transactions Section */}
           {activeSection === "transactions" && (
-            <TransactionsSection 
-              transactions={transactions}
-            />
+            <TransactionsSection />
           )}
           
           {/* Students Section */}
@@ -159,7 +179,7 @@ const AdminDashboard: React.FC = () => {
           {/* Settings Section */}
           {activeSection === "settings" && (
              <div>
-             <h2 className="text-2xl font-bold">setting</h2>
+             <h2 className="text-2xl font-bold">Settings</h2>
              <p>Settings management features will be implemented here.</p>
            </div>
           )}

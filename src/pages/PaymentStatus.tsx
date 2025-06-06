@@ -102,7 +102,7 @@ const PaymentStatus = () => {
             </div>
             <div className="space-y-4">
               <Button asChild className="w-full">
-                <Link to="/dashboard">Go to My Courses</Link>
+                <Link to="/my-courses">Go to My Courses</Link>
               </Button>
               <Button asChild variant="outline" className="w-full">
                 <Link to="/">Back to Homepage</Link>

@@ -59,14 +59,33 @@ export interface Review {
 }
 
 export interface Transaction {
-  id: string;
-  student: string;
-  email: string;
-  courseId: number;
-  courseTitle: string;
-  amount: number;
-  date: string;
-  status: string;
+  id: number;
+  user_id: number;
+  payment_type: 'course' | 'subject';
+  course_or_subject_id: string;
+  transaction_id: string;
+  merchant_transaction_id: string | null;
+  amount: string;
+  status: 'initiated' | 'success' | 'failed' | 'refunded';
+  purchased_at: string;
+  created_at: string;
+  updated_at: string;
+  course_or_subject?: {
+    course_id?: number;
+    course_name?: string;
+    image?: string;
+    description?: string | null;
+    semester?: number;
+    created_at?: string;
+    updated_at?: string;
+    subject_id?: number;
+    subject_name?: string;
+  } | null;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+  };
 }
 
 export interface DashboardStats {

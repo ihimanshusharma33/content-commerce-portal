@@ -22,6 +22,7 @@ jobs:
       - name: 🧱 Build project
         run: npm run build
 
+      # Deploy to Hostinger via SSH
       - name: 📤 Deploy to Hostinger via SCP
         uses: appleboy/scp-action@v0.1.4
         with:

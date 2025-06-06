@@ -1,64 +1,43 @@
-name: 🚀 Deploy to Hostinger via SSH
+name: Build and Deploy React App to Hostinger
 
 on:
   push:
     branches:
-      - main
+      - main  # change this if your default branch is different
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      # Step 1: Checkout the repository
+      - name: 📦 Checkout Code
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
+      # Step 2: Set up Node.js
+      - name: 🔧 Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '18'
 
-      - name: Install dependencies
-        run: npm ci
+      # Step 3: Install dependencies
+      - name: 📥 Install dependencies
+        run: npm install
 
-      - name: Build Vite project
+      # Step 4: Build your project (assuming it builds to "dist/")
+      - name: 🏗️ Build React App
         run: npm run build
 
-      - name: Verify dist contents
-        run: ls -la dist/
-
-      - name: Test SSH connection & create test file
-        uses: appleboy/ssh-action@v0.1.7
-        with:
-          host: ${{ secrets.HOSTINGER_HOST }}
-          username: ${{ secrets.HOSTINGER_USER }}
-          port: ${{ secrets.HOSTINGER_PORT }}
-          key: ${{ secrets.HOSTINGER_SSH_KEY }}
-          script: |
-            echo "SSH connection OK"
-            echo "test file from GitHub Actions" > public_html/test-deploy.txt
-
-      - name: Zip dist folder
-        run: zip -r dist.zip dist/
-
-      - name: Upload zip to Hostinger
+      # Step 5: Deploy to Hostinger via SCP
+      - name: 🚀 Deploy to Hostinger
         uses: appleboy/scp-action@master
         with:
-          host: ${{ secrets.HOSTINGER_HOST }}
-          username: ${{ secrets.HOSTINGER_USER }}
-          port: ${{ secrets.HOSTINGER_PORT }}
-          key: ${{ secrets.HOSTINGER_SSH_KEY }}
-          source: "dist.zip"
-          target: "public_html/"
-
-      - name: Unzip on Hostinger and clean up
-        uses: appleboy/ssh-action@v0.1.7
-        with:
-          host: ${{ secrets.HOSTINGER_HOST }}
-          username: ${{ secrets.HOSTINGER_USER }}
-          port: ${{ secrets.HOSTINGER_PORT }}
-          key: ${{ secrets.HOSTINGER_SSH_KEY }}
-          script: |
-            cd public_html
-            unzip -o dist.zip
-            rm dist.zip
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          source: "dist/*"
+          target: "/home/ed1f63fe957bff25/public_html"
+          strip_components: 1
+          overwrite: true
+          debug: true

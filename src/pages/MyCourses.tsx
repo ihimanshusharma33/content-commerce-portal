@@ -3,38 +3,63 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import CourseCard from '@/components/CourseCard';
-import { isAuthenticated, getCurrentUser, courses } from '@/lib/data';
+import { useAuth } from '@/contexts/AuthContext';
+import apiClient from '@/utils/apiClient';
+import { toast } from "@/components/ui/sonner";
 
 const MyCourses = () => {
   const navigate = useNavigate();
-  const [isLoggedIn, setIsLoggedIn] = useState(isAuthenticated());
-  const user = getCurrentUser();
+  const user = useAuth();
   
-  // Redirect to login if not authenticated
+  const [purchasedCourses, setPurchasedItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    if (!isAuthenticated()) {
+
+    const fetchPurchaseHistory = async () => {
+      try {
+        const response = await apiClient.get('/student/purchased-courses');
+        // console.log(response.data);
+        if (response.data.status) {
+          const purchased = response.data.data
+            .filter(item => item.course_or_subject_details)
+            .map(item => {
+              const details = item.course_or_subject_details;
+              return {
+                id: item.id, 
+                title: item.payment_type === 'course' ? details.course_name : details.subject_name,
+                image: details.image,
+                price: details.price,
+                semester: item.payment_type === 'course'? details.semester:'',
+                rating: details.average_rating,
+                reviewCount: details.total_reviews,
+                type: item.payment_type,
+                course_id: details.course_id,
+           
+              };
+            });
+
+          setPurchasedItems(purchased);
+        }
+      } catch (error) {
+        console.error('Failed to fetch purchase history:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPurchaseHistory();
+  }); 
+
+    if (!user) {
+       toast("Authentication required", {
+        description: "Please sign in or create an account to purchase this course."
+      });
       navigate('/signin', { state: { redirectTo: '/my-courses' } });
+      return;
     }
-    
-    // Listen for auth state changes
-    const handleAuthChange = () => {
-      setIsLoggedIn(isAuthenticated());
-    };
-    
-    window.addEventListener('storage', handleAuthChange);
-    
-    return () => {
-      window.removeEventListener('storage', handleAuthChange);
-    };
-  }, [navigate]);
-  
-  // Get purchased courses
-  const purchasedCourses = courses.filter(course => 
-    user?.purchasedCourses.includes(course.id)
-  );
-  
-  if (!isLoggedIn || !user) {
-    return null; // This will redirect, but prevents flash of content
+  if(loading){
+    return "Loading...";
   }
   
   return (
@@ -46,10 +71,11 @@ const MyCourses = () => {
           {purchasedCourses.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {purchasedCourses.map(course => (
-                <CourseCard 
+                <CourseCard
+                  course={course}
+                  course_or_subject={course.type}
+                  isPurchased={true}
                   key={course.id} 
-                  course={course} 
-                  isPurchased={true} 
                 />
               ))}
             </div>
@@ -66,7 +92,7 @@ const MyCourses = () => {
                 Browse Courses
               </button>
             </div>
-          )}
+          )} 
         </div>
       </main>
       

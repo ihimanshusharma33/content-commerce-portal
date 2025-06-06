@@ -11,7 +11,7 @@ import CourseContent from "./pages/CourseContent";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import StudentDashboard from "./students/StudentDashboard";
-import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentSuccess from "./pages/PaymentStatus";
 import AdminDashboard from "./admin/AdminDashoboard";
 import PDFViewerPage from "./pages/PDFViewerPage";
 import MyCourses from "./pages/MyCourses";
@@ -20,6 +20,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
 import WhatsAppButton from "./components/WhatsAppButton";
 import SubjectDetail from "./pages/SubjectDetail";
+import PaymentStatus from "./pages/PaymentStatus";
 
 const queryClient = new QueryClient();
 
@@ -39,7 +40,7 @@ const App = () => (
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/my-courses" element={<MyCourses />} />
-            <Route path="/payment-success" element={<PaymentSuccess />} />
+            <Route path="/payment-status" element={<PaymentStatus />} />
             <Route
               path="/admin-dashboard"
               element={

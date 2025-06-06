@@ -14,7 +14,7 @@ const CourseCategories = () => {
         data.forEach((course) => {
           if (!grouped[course.name]) {
             grouped[course.name] = {
-              id:course.id,
+              id: course.id,
               name: course.name,
               allIds: [course.id],
               image: course.image,
@@ -37,40 +37,38 @@ const CourseCategories = () => {
   }, []);
 
   return (
-    <section className="py-10 bg-secondary/30">
-      <div className="container-custom">
-        <h2 className="text-3xl font-bold mb-8 text-center">
-          Browse Categories
-        </h2>
+  <section className="py-10 bg-secondary/30">
+    <div className="container mx-auto px-4 text-center">
+      <h2 className="text-3xl font-bold mb-8">Browse Categories</h2>
 
-        {loading ? (
-          <p className="text-center">Loading...</p>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {groupedCourses.map((course) => (
-              <Link
-                to={`/courses?category=${course.id}`}
-                key={course.name}
-                className="flex flex-col items-center p-4 bg-white rounded-lg shadow-sm transition-all hover:shadow-md hover:-translate-y-1"
-              >
-                <div className="w-14 h-14 rounded-full bg-secondary/30 flex items-center justify-center mb-3">
-                  <img
-                    src={course.image}
-                    alt={course.name}
-                    className="w-8 h-8 object-contain"
-                  />
-                </div>
-                <h3 className="font-medium text-center">{course.name}</h3>
-                <p className="text-sm text-gray-500">
-                  {course.allIds.length} Semesters
-                </p>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-    </section>
-  );
+      {loading ? (
+        <p className="text-center">Loading...</p>
+      ) : (
+        <div className="flex flex-wrap justify-center gap-6">
+          {groupedCourses.map((course) => (
+            <Link
+              to={`/courses?category=${course.id}`}
+              key={course.name}
+              className="w-40 sm:w-44 md:w-48 flex flex-col items-center p-5 bg-white rounded-lg shadow-sm transition-all hover:shadow-md hover:-translate-y-1"
+            >
+              <div className="w-16 h-16 rounded-full bg-secondary/30 flex items-center justify-center mb-3">
+                <img
+                  src={course.image}
+                  alt={course.name}
+                  className="w-10 h-10 object-contain"
+                />
+              </div>
+              <h3 className="font-medium text-center">{course.name}</h3>
+              <p className="text-sm text-gray-500">
+                {course.allIds.length} Semesters
+              </p>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+);
 };
 
 export default CourseCategories;

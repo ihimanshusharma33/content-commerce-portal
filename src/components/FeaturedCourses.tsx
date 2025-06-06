@@ -37,6 +37,7 @@ const FeaturedCourses = () => {
             price: details.price || 0,
             rating: Number(details.average_rating || 0).toFixed(1), 
             image: details.image,
+            reviewCount:details.total_reviews,
           };
         });
 

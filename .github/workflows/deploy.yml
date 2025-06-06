@@ -1,43 +1,68 @@
-name: Build and Deploy React App to Hostinger
+name: 🚀 Deploy to Hostinger via SSH
 
 on:
   push:
     branches:
-      - main  # change this if your default branch is different
+      - main
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the repository
-      - name: 📦 Checkout Code
+      - name: 📦 Checkout repo
         uses: actions/checkout@v3
 
-      # Step 2: Set up Node.js
-      - name: 🔧 Set up Node.js
+      - name: 🔧 Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
-      # Step 3: Install dependencies
       - name: 📥 Install dependencies
-        run: npm install
+        run: npm ci
 
-      # Step 4: Build your project (assuming it builds to "dist/")
-      - name: 🏗️ Build React App
+      - name: 🏗️ Build Vite project
         run: npm run build
 
-      # Step 5: Deploy to Hostinger via SCP
-      - name: 🚀 Deploy to Hostinger
+      - name: 🧾 List contents of dist/
+        run: ls -la dist/
+
+      - name: 🔐 Test SSH connection
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          port: ${{ secrets.HOSTINGER_PORT }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          script: |
+            echo "✅ SSH connection successful."
+            echo "Deployed via GitHub Actions 🚀" > public_html/deploy-check.txt
+
+      - name: 📦 Zip dist folder
+        run: zip -r dist.zip dist/
+
+      - name: 📤 Upload zip to Hostinger
         uses: appleboy/scp-action@master
         with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          port: 22
-          source: "dist/*"
-          target: "/home/ed1f63fe957bff25/public_html"
-          strip_components: 1
-          overwrite: true
-          debug: true
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          port: ${{ secrets.HOSTINGER_PORT }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          source: "dist.zip"
+          target: "public_html/"
+
+      - name: 📂 Unzip and deploy on server
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          port: ${{ secrets.HOSTINGER_PORT }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          script: |
+            cd public_html
+            echo "📁 Unzipping dist.zip..."
+            unzip -o dist.zip
+            rm dist.zip
+            mv dist/* ./
+            rm -r dist
+            echo "✅ Deployment complete!"

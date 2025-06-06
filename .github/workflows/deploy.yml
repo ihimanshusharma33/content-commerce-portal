@@ -3,7 +3,7 @@ name: 🚀 Deploy to Hostinger via SSH
 on:
   push:
     branches:
-      - main  # Or your deployment branch
+      - main  # Change if your deploy branch is different
 
 jobs:
   deploy:
@@ -13,22 +13,37 @@ jobs:
       - name: ⬇️ Checkout repo
         uses: actions/checkout@v3
 
-      - name: 🛠️ Setup Node
+      - name: 🛠️ Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20' 
+          node-version: '20'
+
       - name: 📦 Install dependencies
-        run: npm ci  
-      - name: 🧱 Build project
+        run: npm ci
+
+      - name: 🧱 Build Vite project
         run: npm run build
 
-      # Deploy to Hostinger via SSH
-      - name: 📤 Deploy to Hostinger via SCP
-        uses: appleboy/scp-action@v0.1.4
+      - name: 📋 List dist folder contents
+        run: ls -la dist/
+
+      - name: 🔍 Test SSH connection to Hostinger
+        uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.HOSTINGER_HOST }}
           username: ${{ secrets.HOSTINGER_USER }}
           port: ${{ secrets.HOSTINGER_PORT }}
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
-          source: "dist/*" 
-          target: "public_html/" 
+          script: |
+            echo "SSH connection successful"
+            ls -la public_html/
+
+      - name: 📤 Deploy to Hostinger via SCP
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          port: ${{ secrets.HOSTINGER_PORT }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          source: "dist/*"
+          target: "public_html/"

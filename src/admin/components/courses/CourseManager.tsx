@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { fetchCourses, createCourse, updateCourse, deleteCourse } from "../../../services/apiService";
-import { Course } from "../../../../types/index";
+import { Course } from "../../../services/apiService"; // Import directly from apiService
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Plus, Pencil, Trash2, BookOpen, Loader2, Search, DollarSign, PercentIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, BookOpen, Loader2, Search, DollarSign, PercentIcon, Star } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -23,7 +23,7 @@ const CourseManager: React.FC = () => {
   const [description, setDescription] = useState("");
   const [semester, setSemester] = useState<number | string>(1);
   const [courseImage, setCourseImage] = useState<File | null>(null);
-  // New fields for price and discount
+  // Fields for price and discount
   const [price, setPrice] = useState<number | string>("");
   const [discount, setDiscount] = useState<number | string>("");
 
@@ -71,7 +71,11 @@ const CourseManager: React.FC = () => {
       updateCourse(selectedCourse.id, formData)
         .then((updatedCourse) => {
           setCourses((prev) =>
-            prev.map((course) => (course.id === updatedCourse.id ? updatedCourse : course))
+            prev.map((course) => (course.id === updatedCourse.id ? {
+              ...updatedCourse,
+              averageRating: course.averageRating,
+              totalReviews: course.totalReviews
+            } : course))
           );
           closeForm();
         })
@@ -81,7 +85,7 @@ const CourseManager: React.FC = () => {
       // Add new course
       createCourse(formData)
         .then((newCourse) => {
-          setCourses((prev) => [...prev, newCourse]);
+          setCourses((prev) => [...prev, {...newCourse, averageRating: "0", totalReviews: 0}]);
           closeForm();
         })
         .catch((error) => console.error("Failed to create course:", error))
@@ -158,6 +162,49 @@ const CourseManager: React.FC = () => {
     const discountNum = Number(discount);
     
     return priceNum - (priceNum * (discountNum / 100));
+  };
+
+  // Render star rating
+  const renderStarRating = (rating: string | undefined) => {
+    if (!rating) return null;
+    
+    const ratingValue = parseFloat(rating);
+    const fullStars = Math.floor(ratingValue);
+    const hasHalfStar = ratingValue - fullStars >= 0.5;
+    
+    return (
+      <div className="flex items-center">
+        {[...Array(5)].map((_, i) => {
+          if (i < fullStars) {
+            // Full star
+            return (
+              <Star 
+                key={i} 
+                className="h-4 w-4 fill-yellow-400 text-yellow-400" 
+              />
+            );
+          } else if (i === fullStars && hasHalfStar) {
+            // Half star (using CSS for half fill)
+            return (
+              <div key={i} className="relative">
+                <Star className="h-4 w-4 text-gray-300" />
+                <div className="absolute top-0 left-0 overflow-hidden w-1/2">
+                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                </div>
+              </div>
+            );
+          } else {
+            // Empty star
+            return (
+              <Star 
+                key={i} 
+                className="h-4 w-4 text-gray-300" 
+              />
+            );
+          }
+        })}
+      </div>
+    );
   };
 
   // Filter courses based on search term
@@ -270,12 +317,22 @@ const CourseManager: React.FC = () => {
                         {course.semester} {Number(course.semester) === 1 ? 'Semester' : 'Semesters'}
                       </Badge>
                     </div>
+                    
+                    {/* Rating information */}
+                    <div className="mt-1.5 flex items-center gap-2">
+                      {renderStarRating(course.averageRating)}
+                      <span className="text-sm text-gray-600">
+                        {course.averageRating ? parseFloat(course.averageRating).toFixed(1) : '0'} 
+                        {course.totalReviews ? ` (${course.totalReviews} ${course.totalReviews === 1 ? 'review' : 'reviews'})` : ''}
+                      </span>
+                    </div>
+                    
                     <p className="text-gray-600 mt-2 text-sm line-clamp-3 h-14">
                       {course.description || "No description available"}
                     </p>
                     
                     {/* Price and discount display */}
-                    {course.price && (
+                    {course.price ? (
                       <div className="mt-3 flex items-center">
                         {course.discount && Number(course.discount) > 0 ? (
                           <>
@@ -291,6 +348,10 @@ const CourseManager: React.FC = () => {
                             {formatPrice(course.price)}
                           </span>
                         )}
+                      </div>
+                    ) : (
+                      <div className="mt-3">
+                        <span className="text-lg font-bold text-green-600">Free</span>
                       </div>
                     )}
                   </CardContent>
@@ -322,7 +383,7 @@ const CourseManager: React.FC = () => {
         </>
       )}
 
-      {/* Add/Edit Course Modal */}
+      {/* Add/Edit Course Modal - Form content remains the same */}
       {isFormOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
@@ -375,7 +436,7 @@ const CourseManager: React.FC = () => {
                   Price
                 </Label>
                 <div className="relative mt-1">
-                  <span className="absolute left-3 top-2.5 text-gray-500">$</span>
+                  <span className="absolute left-3 top-2.5 text-gray-500">₹</span>
                   <Input
                     id="price"
                     type="number"

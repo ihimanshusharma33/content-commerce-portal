@@ -17,7 +17,7 @@ const mapCourseReviewFromApi = (review: any): CourseReview => {
     user_id: reviewData.user_id,
     course_id: reviewData.course_id,
     rating: reviewData.rating || 0,
-    content: reviewData.content || reviewData.review_content || reviewData.description || '',
+    content: reviewData.content || reviewData.review_content || reviewData.review_description || '',
     status: status,
     is_approved: reviewData.is_approved,
     created_at: reviewData.created_at || new Date().toISOString(),

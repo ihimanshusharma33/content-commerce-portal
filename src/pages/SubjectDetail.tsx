@@ -13,6 +13,7 @@ import PaymentModal from '@/components/PaymentModal';
 import apiClient from '@/utils/apiClient';
 import { useCourseDetails } from '@/hooks/useCourseDetails';
 import { useAuth } from '@/contexts/AuthContext';
+import { Loader2 } from 'lucide-react';
 
 const SubjectDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -92,7 +93,10 @@ const SubjectDetail = () => {
     }
   }, [id, navigate, course]);
 
-    if (loading) return <p>Loading...</p>;
+    if (loading) return  <div className="flex justify-center items-center min-h-screen">
+  <Loader2 className="h-8 w-8 text-primary animate-spin mr-2" />
+</div>
+;
   if (!course) return <p>No course found.</p>;
 
   const handlePurchase = () => {

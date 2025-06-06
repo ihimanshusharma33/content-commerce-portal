@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { fetchCourses } from "@/services/apiService";
+import { Loader2 } from "lucide-react";
 
 const CourseCategories = () => {
   const [groupedCourses, setGroupedCourses] = useState([]);
@@ -36,13 +37,18 @@ const CourseCategories = () => {
       .finally(() => setLoading(false));
   }, []);
 
+  if(loading)
+     return <div className="flex justify-center items-center min-h-screen">
+      <Loader2 className="h-8 w-8 text-primary animate-spin mr-2" />
+    </div>
+
   return (
   <section className="py-10 bg-secondary/30">
     <div className="container mx-auto px-4 text-center">
       <h2 className="text-3xl font-bold mb-8">Browse Categories</h2>
 
       {loading ? (
-        <p className="text-center">Loading...</p>
+        <p className="text-center"><Loader2/></p>
       ) : (
         <div className="flex flex-wrap justify-center gap-6">
           {groupedCourses.map((course) => (

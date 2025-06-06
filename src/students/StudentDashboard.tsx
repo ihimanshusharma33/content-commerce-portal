@@ -50,7 +50,8 @@ const StudentDashboard: React.FC = () => {
   };
 
   const handleGoBack = () => {
-    navigate(-1); // Go back to the previous route
+    // navigate back to the home page or previous page
+    navigate('/'); 
   };
 
   return (

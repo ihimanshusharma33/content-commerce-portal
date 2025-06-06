@@ -13,134 +13,221 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Filter, X } from "lucide-react"; // Import icons
 import { Course, Subject } from 'types';
 import { fetchCourses, fetchSubjectsByCourse } from '@/services/apiService';
+import apiClient from '@/utils/apiClient';
 
 const CourseList = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const categoryParam = searchParams.get('category');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>(categoryParam ? [categoryParam] : []);
-  const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('featured');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [categories, setcategories] = useState<Course[]>([]);
   const [courses, setcourses] = useState<Subject[]>([]);
-  const [filteredCourses, setFilteredCourses] = useState(courses);
+  const [detailedCourses, setdetailedCourses] = useState<Subject[]>([]);
+  const [filteredDetailedCourses, setFilteredDetailedCourses] = useState<Subject[]>([]);
 
-  
+  const [filteredCourses, setFilteredCourses] = useState(courses);
+  const [visibleSubjectCount, setVisibleSubjectCount] = useState(6);
+  const [visibleCourseCount, setVisibleCourseCount] = useState(3);
+
   const user = getCurrentUser();
   const purchasedCourses = user?.purchasedCourses || [];
-  
 
   useEffect(() => {
     fetchCourses()
-      .then((data) => setcategories(data))
-      .catch((error) => console.error('Failed to fetch courses:', error))
+      .then((data) => {
+        const grouped = {};
+
+        data.forEach((course) => {
+          if (!grouped[course.name]) {
+            grouped[course.name] = {
+              id: course.id,
+              name: course.name,
+              allIds: [course.id],
+              image: course.image,
+              semester: course.semester,
+            };
+          } else {
+            grouped[course.name].allIds.push(course.id);
+
+            if (course.semester < grouped[course.name].minSemester) {
+              grouped[course.name].image = course.image;
+              grouped[course.name].minSemester = course.semester;
+            }
+          }
+        });
+
+        setcategories(Object.values(grouped));
+      })
+      .catch((error) => console.error("Failed to fetch courses:", error))
+
   }, []);
 
- useEffect(() => {
-  if (categories.length > 0) {
-    const firstCourseId = categories[0].id;
-    fetchSubjectsByCourse(firstCourseId)
-      .then((data) => {
-        setcourses(data);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-  }
-}, [categories]);
 
-  console.log(categories);
-console.log(courses);
+  useEffect(() => {
+    apiClient.get('/courses')
+      .then((res) => {
+        const detailcourse = res.data.data;
+
+        const mappedCourses = detailcourse.map((courseDetail: any) => ({
+          id: courseDetail.course_id,
+          title: courseDetail.course_name,
+          description: courseDetail.description || '',
+          price: courseDetail.price || 0,
+          semester: courseDetail.semester,
+          discountPrice: courseDetail.discountPrice || 0,
+          rating: courseDetail.average_rating || 0,
+          image: courseDetail.image,
+          reviewCount: courseDetail.total_reviews
+        }));
+
+        setdetailedCourses(mappedCourses);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch subjects:", err);
+      });
+  }, []);
+
+  // console.log(detailedCourses);
+  useEffect(() => {
+    apiClient.get('/subjects')
+      .then((res) => {
+        const subjects = res.data.data;
+
+        const mappedCourses = subjects.map((sub: any) => ({
+          id: sub.subject_id,
+          title: sub.subject_name,
+          description: sub.description || '',
+          category: sub.course_id,
+          price: sub.price || 0,
+          discountPrice: sub.discountPrice,
+          rating: sub.average_rating || 0,
+          image: sub.image,
+          reviewCount: sub.total_reviews
+        }));
+
+        setcourses(mappedCourses);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch subjects:", err);
+      });
+  }, []);
+
+
+  useEffect(() => {
+    setVisibleSubjectCount(6);
+  }, [filteredCourses]);
+
+  useEffect(() => {
+    setVisibleCourseCount(3);
+  }, [filteredDetailedCourses]);
+
   // Apply filters
   useEffect(() => {
     // Existing filter logic...
     let result = [...courses];
-    
+    let resultCourse = [...detailedCourses];
+
+
     // Filter by search term
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      result = result.filter(course => 
-        course.title.toLowerCase().includes(term) || 
-        course.description.toLowerCase().includes(term) ||
-        course.instructor.toLowerCase().includes(term)
+      result = result.filter(course =>
+        course.title.toLowerCase().includes(term) ||
+        course.description.toLowerCase().includes(term)
+      );
+      resultCourse = resultCourse.filter(course =>
+        course.title.toLowerCase().includes(term) ||
+        course.description.toLowerCase().includes(term)
       );
     }
-    
+
     // Filter by categories
-    if (selectedCategories.length > 0) {
-      result = result.filter(course => selectedCategories.includes(course.category));
+    const selectedCatIds = selectedCategories.map(id => Number(id));
+    if (selectedCatIds.length > 0) {
+      result = result.filter(course => selectedCatIds.includes(course.category));
+      resultCourse = resultCourse.filter(course => selectedCatIds.includes(course.id));
     }
-    
-    // Filter by level
-    if (selectedLevels.length > 0) {
-      result = result.filter(course => selectedLevels.includes(course.level));
-    }
-    
+
     // Filter by price
     if (priceRange === 'free') {
       result = result.filter(course => course.price === 0);
+      resultCourse = resultCourse.filter(course => course.price === 0);
+
     } else if (priceRange === 'paid') {
       result = result.filter(course => course.price > 0);
+      resultCourse = resultCourse.filter(course => course.price > 0);
+
     } else if (priceRange === 'under50') {
       result = result.filter(course => course.discountPrice ? course.discountPrice < 50 : course.price < 50);
+      resultCourse = resultCourse.filter(course => course.discountPrice ? course.discountPrice < 50 : course.price < 50);
+
     }
-    
+
     // Sort courses
     if (sortBy === 'price-low') {
       result.sort((a, b) => (a.discountPrice || a.price) - (b.discountPrice || b.price));
+      resultCourse.sort((a, b) => (a.discountPrice || a.price) - (b.discountPrice || b.price));
+
     } else if (sortBy === 'price-high') {
       result.sort((a, b) => (b.discountPrice || b.price) - (a.discountPrice || a.price));
+      resultCourse.sort((a, b) => (b.discountPrice || b.price) - (a.discountPrice || a.price));
+
     } else if (sortBy === 'rating') {
       result.sort((a, b) => b.rating - a.rating);
+      resultCourse.sort((a, b) => b.rating - a.rating);
+
     } else if (sortBy === 'newest') {
-      // In a real app, we would sort by date added
       result = [...result].reverse();
+      resultCourse = [...resultCourse].reverse();
+
     }
-    
+
     setFilteredCourses(result);
-  }, [searchTerm, selectedCategories, selectedLevels, priceRange, sortBy]);
-  
+    setFilteredDetailedCourses(resultCourse);
+
+  }, [searchTerm, selectedCategories, priceRange, sortBy, courses, categories, detailedCourses]);
+
   // Toggle mobile filters
   const toggleMobileFilters = () => {
     setShowMobileFilters(!showMobileFilters);
   };
-  
+
   // Existing handler functions...
-  const toggleCategory = (categoryId: string) => {
-    setSelectedCategories(prev => 
-      prev.includes(categoryId) 
-        ? prev.filter(id => id !== categoryId)
-        : [...prev, categoryId]
-    );
+  const toggleCategory = (ids: number[]) => {
+    const alreadySelected = ids.every(id => selectedCategories.includes(id));
+    if (alreadySelected) {
+      setSelectedCategories(prev => prev.filter(id => !ids.includes(id)));
+    } else {
+      setSelectedCategories(prev => Array.from(new Set([...prev, ...ids])));
+    }
   };
-  
-  const toggleLevel = (level: string) => {
-    setSelectedLevels(prev => 
-      prev.includes(level) 
-        ? prev.filter(l => l !== level)
-        : [...prev, level]
-    );
-  };
-  
+
+
+  // console.log(courses);
+
   const resetFilters = () => {
     setSearchTerm('');
     setSelectedCategories([]);
-    setSelectedLevels([]);
     setPriceRange('all');
     setSortBy('featured');
     setSearchParams({});
     setFilteredCourses(courses);
     setShowMobileFilters(false); // Close mobile filters when resetting
   };
-  
+
+  const isCategorySelected = (ids: number[]) => {
+    return ids.every(id => selectedCategories.includes(id));
+  };
+
   // Render filters content (shared between mobile and desktop)
   const renderFiltersContent = () => (
     <>
       <div className="mb-6">
         <h3 className="font-medium text-lg mb-3">Search</h3>
-        <Input 
+        <Input
           type="text"
           placeholder="Search courses..."
           value={searchTerm}
@@ -148,14 +235,14 @@ console.log(courses);
           className="w-full"
         />
       </div>
-      
+
       <div className="mb-6">
         <div className="flex justify-between items-center mb-3">
           <h3 className="font-medium text-lg">Categories</h3>
           {selectedCategories.length > 0 && (
-            <Button 
-              variant="link" 
-              className="text-xs p-0 h-auto" 
+            <Button
+              variant="link"
+              className="text-xs p-0 h-auto"
               onClick={() => setSelectedCategories([])}
             >
               Clear
@@ -165,22 +252,24 @@ console.log(courses);
         <div className="space-y-2">
           {categories.map((category) => (
             <div key={category.id} className="flex items-center space-x-2">
-              <Checkbox 
-                id={`category-${category.id}`} 
-                checked={selectedCategories.includes(category.id)}
-                onCheckedChange={() => toggleCategory(category.id)}
+              <Checkbox
+                id={`category-${category.id}`}
+                checked={isCategorySelected(category.allIds)}
+                onCheckedChange={() => toggleCategory(category.allIds)}
+
               />
-              <Label 
+
+              <Label
                 htmlFor={`category-${category.id}`}
                 className="text-sm cursor-pointer"
               >
-                {category.name} <span className="text-muted-foreground">({category.totalSemesters})</span>
+                {category.name} <span className="text-muted-foreground">({category.allIds.length} Semesters)</span>
               </Label>
             </div>
           ))}
         </div>
       </div>
-      
+
       <div className="mb-6">
         <h3 className="font-medium text-lg mb-3">Price</h3>
         <RadioGroup value={priceRange} onValueChange={setPriceRange}>
@@ -202,28 +291,28 @@ console.log(courses);
           </div>
         </RadioGroup>
       </div>
-      
-      <Button 
-        onClick={resetFilters} 
-        variant="outline" 
+
+      <Button
+        onClick={resetFilters}
+        variant="outline"
         className="w-full"
       >
         Reset All Filters
       </Button>
     </>
   );
-  
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      
-      <div className="bg-secondary/20 py-8">
+
+      <div className=" py-8">
         <div className="container-custom">
           <h1 className="text-xl font-bold mb-2">All Courses</h1>
           <p className="text-muted-foreground">Browse our collection of courses to advance your skills</p>
         </div>
       </div>
-      
+
       <main className="flex-grow py-8">
         <div className="container-custom">
           <div className="flex flex-col lg:flex-row gap-6">
@@ -235,26 +324,26 @@ console.log(courses);
                 </CardContent>
               </Card>
             </div>
-            
+
             {/* Mobile Filter Toggle + Sort Controls */}
             <div className="lg:hidden flex justify-between items-center mb-4 w-full">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={toggleMobileFilters}
                 className="flex items-center gap-2"
               >
                 <Filter className="h-4 w-4" />
-                Filters {(selectedCategories.length > 0 || selectedLevels.length > 0 || priceRange !== 'all') && (
+                Filters {(selectedCategories.length > 0 || priceRange !== 'all') && (
                   <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                    {selectedCategories.length + selectedLevels.length + (priceRange !== 'all' ? 1 : 0)}
+                    {selectedCategories.length + (priceRange !== 'all' ? 1 : 0)}
                   </span>
                 )}
               </Button>
-              
+
               <div className="flex items-center space-x-2">
                 <label className="text-sm">Sort by:</label>
-                <select 
+                <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
                   className="border rounded-md py-1 px-2 text-sm"
@@ -267,16 +356,16 @@ console.log(courses);
                 </select>
               </div>
             </div>
-            
+
             {/* Mobile Filters Drawer */}
             {showMobileFilters && (
               <>
                 {/* Overlay */}
-                <div 
+                <div
                   className="fixed inset-0 bg-black/50 z-40 lg:hidden"
                   onClick={toggleMobileFilters}
                 />
-                
+
                 {/* Slide-in panel */}
                 <div className="fixed inset-y-0 left-0 max-w-xs w-full bg-white z-50 lg:hidden overflow-y-auto">
                   <div className="flex items-center justify-between p-4 border-b">
@@ -291,17 +380,17 @@ console.log(courses);
                 </div>
               </>
             )}
-            
+
             {/* Course Grid + Desktop Sort Controls */}
             <div className="lg:w-3/4 w-full">
               <div className="hidden lg:flex justify-between items-center mb-6">
                 <p className="text-muted-foreground">
-                  Showing <span className="font-medium text-foreground">{filteredCourses.length}</span> results
+                  Showing Total <span className="font-medium text-foreground"> {filteredCourses.length + filteredDetailedCourses.length} </span> results
                 </p>
-                
+
                 <div className="flex items-center space-x-2">
                   <label className="text-sm">Sort by:</label>
-                  <select 
+                  <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
                     className="border rounded-md py-1 px-2 text-sm"
@@ -314,24 +403,33 @@ console.log(courses);
                   </select>
                 </div>
               </div>
-              
+
               {/* Mobile Results Count */}
               <div className="lg:hidden mb-4">
+                
                 <p className="text-muted-foreground text-sm">
-                  Showing <span className="font-medium text-foreground">{filteredCourses.length}</span> results
+                  Showing Courses <span className="font-medium text-foreground">{filteredDetailedCourses.length}</span> results
                 </p>
               </div>
-              
-              {filteredCourses.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredCourses.map(course => (
-                    <CourseCard 
-                      key={course.id} 
-                      course={course} 
-                      isPurchased={purchasedCourses.includes(course.id)}
-                    />
-                  ))}
-                </div>
+               <h2 className="text-3xl font-bold text-center mb-8 text-primary">
+      Explore Our Courses
+    </h2>
+              {filteredDetailedCourses.length > 0 ? (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredDetailedCourses.slice(0, visibleCourseCount).map((course) => (
+                      <CourseCard key={course.id} course={course}  course_or_subject={"course"}/>
+                    ))}
+                  </div>
+
+                  {visibleCourseCount < filteredDetailedCourses.length && (
+                    <div className="text-center m-6">
+                      <Button onClick={() => setVisibleCourseCount(prev => prev + 3)}>
+                        Load More
+                      </Button>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="text-center py-12">
                   <h3 className="text-lg font-medium mb-2">No courses found</h3>
@@ -339,11 +437,54 @@ console.log(courses);
                   <Button onClick={resetFilters}>Reset Filters</Button>
                 </div>
               )}
+
+
+              <div className="lg:hidden mb-4">
+                <p className="text-muted-foreground text-sm">
+                  Showing Subject <span className="font-medium text-foreground">{filteredCourses.length}</span> results
+                </p>
+              </div>
+              <hr/><br/><br/>
+               <h2 className="text-3xl font-bold text-center mb-8 text-primary">
+      Explore Our Subjects
+    </h2>
+
+              {filteredCourses.length > 0 ? (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredCourses.slice(0, visibleSubjectCount).map((course) => (
+                      <CourseCard
+                        key={course.id}
+                        course={course}
+                        isPurchased={purchasedCourses.includes(course.id)}
+                        course_or_subject={"subject"}
+                      />
+                    ))}
+                  </div>
+                  {visibleSubjectCount < filteredCourses.length && (
+                    <div className="text-center mt-6">
+                      <Button onClick={() => setVisibleSubjectCount(prev => prev + 6)}>
+                        Load More
+                      </Button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-12">
+                  <h3 className="text-lg font-medium mb-2">No Subjects found</h3>
+                  <p className="text-muted-foreground mb-6">Try adjusting your filters or search term</p>
+                  <Button onClick={resetFilters}>Reset Filters</Button>
+                </div>
+              )}
             </div>
+
           </div>
+
+
         </div>
+
       </main>
-      
+
       <Footer />
     </div>
   );

@@ -1,24 +1,51 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CourseCard from '@/components/CourseCard';
-import { courses, getCurrentUser } from '@/lib/data';
 import { Button } from "@/components/ui/button";
-import PaymentModal from "@/components/PaymentModal";
 import { toast } from "@/components/ui/sonner";
+import apiClient from "@/utils/apiClient";
+import { useAuth } from "@/contexts/AuthContext";
 
 const FeaturedCourses = () => {
   const [visibleCourses, setVisibleCourses] = useState(3);
-  const [selectedCourse, setSelectedCourse] = useState<typeof courses[0] | null>(null);
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  
+  const [courses, setcourses] = useState([]);
   const navigate = useNavigate();
-  const featuredCourses = courses.filter(course => course.featured);
-  const user = getCurrentUser();
-  const purchasedCourses = user?.purchasedCourses || [];
-  
+  const featuredCourses = courses;
+  const user = useAuth();
+  const purchasedCourses = [];
+
   const showMoreCourses = () => {
     setVisibleCourses(prev => Math.min(prev + 3, featuredCourses.length));
   };
+
+  useEffect(() => {
+    apiClient.get('/featuredCourseOrSubject')
+      .then((res) => {
+        const featured = res.data.data;
+
+        const mappedFeaturedCourses = featured.map((f: any) => {
+          const isSubject = f.type === 'subject';
+          const details = f.details;
+
+          return {
+            id: isSubject ? details.subject_id : details.course_id,
+            type: f.type,
+            title: isSubject ? details.subject_name : details.course_name,
+            semester: isSubject ? '': details.semester,
+            description: details.description || '',
+            category: isSubject ? details.subject_id : details.course_id, 
+            price: details.price || 0,
+            rating: Number(details.average_rating || 0).toFixed(1), 
+            image: details.image,
+          };
+        });
+
+        setcourses(mappedFeaturedCourses);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch subjects:", err);
+      });
+  }, []);
 
   const handleQuickBuy = (course: typeof courses[0]) => {
     if (!user) {
@@ -28,56 +55,29 @@ const FeaturedCourses = () => {
       navigate('/signin', { state: { redirectTo: `/course/${course.id}` } });
       return;
     }
-    
-    setSelectedCourse(course);
-    setIsPaymentModalOpen(true);
+    navigate(`/checkout/${course.type}/${course.id}`);
   };
-  
-  const handlePaymentComplete = () => {
-    if (selectedCourse) {
-      import('@/lib/data').then(({ purchaseCourse }) => {
-        purchaseCourse(selectedCourse.id);
-        
-        toast("Payment successful", {
-          description: `You've successfully purchased ${selectedCourse.title}`
-        });
-        
-        // Re-render component to show updated purchase state
-        window.dispatchEvent(new Event('storage'));
-      });
-    }
-    
-    setIsPaymentModalOpen(false);
-    setSelectedCourse(null);
-  };
-  
+
   return (
     <section className="py-10">
-      {selectedCourse && (
-        <PaymentModal 
-          isOpen={isPaymentModalOpen}
-          onClose={() => setIsPaymentModalOpen(false)}
-          course={selectedCourse}
-          onPaymentComplete={handlePaymentComplete}
-        />
-      )}
-      
+
       <div className="container-custom">
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-3xl font-bold">Featured Courses</h2>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {featuredCourses.slice(0, visibleCourses).map(course => (
-            <div key={course.id} className="relative group">
-              <CourseCard 
-                course={course} 
+          {courses.slice(0, visibleCourses).map(course => (
+            <div key={`${course.type}-${course.id}`} className="relative group">
+              <CourseCard
+                course={course}
+                course_or_subject={course.type}
                 isPurchased={purchasedCourses.includes(course.id)}
               />
-              
+
               {!purchasedCourses.includes(course.id) && (
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
-                  <Button 
+                  <Button
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -92,8 +92,8 @@ const FeaturedCourses = () => {
             </div>
           ))}
         </div>
-        
-        {visibleCourses < featuredCourses.length && (
+
+        {visibleCourses < courses.length && (
           <div className="mt-8 text-center">
             <Button onClick={showMoreCourses} variant="secondary">
               Show More Courses

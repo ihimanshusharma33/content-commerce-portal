@@ -18,6 +18,8 @@ import MyCourses from "./pages/MyCourses";
 import PaymentPage from "./pages/PaymentPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
+import WhatsAppButton from "./components/WhatsAppButton";
+import SubjectDetail from "./pages/SubjectDetail";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +35,7 @@ const App = () => (
             <Route path="/courses" element={<CourseList />} />
             <Route path="/course/:id" element={<CourseDetail />} />
             <Route path="/course/:id/content" element={<CourseContent />} />
+            <Route path="/subject/:id" element={<SubjectDetail />} />
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/my-courses" element={<MyCourses />} />
@@ -53,12 +56,13 @@ const App = () => (
             />
             <Route path="/pdf/:pdfId" element={<PDFViewerPage />} />
             <Route path="/pdf-viewer" element={<PDFViewerPage />} />
-            <Route path="/checkout/:courseId" element={<PaymentPage />} />
+            <Route path="/checkout/:courseOrSubject/:courseId" element={<PaymentPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
+     <WhatsAppButton />
   </QueryClientProvider>
 );
 

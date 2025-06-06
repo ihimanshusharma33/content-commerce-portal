@@ -11,29 +11,61 @@ import { toast } from "@/components/ui/sonner";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import PaymentModal from '@/components/PaymentModal';
 import apiClient from '@/utils/apiClient';
-import { useAuth } from '@/contexts/AuthContext';
 import { useCourseDetails } from '@/hooks/useCourseDetails';
+import { useAuth } from '@/contexts/AuthContext';
 
-const CourseDetail = () => {
+const SubjectDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const course_or_subject="course";
-
+  const course_or_subject="subject";
   const navigate = useNavigate();
+  // const user = getCurrentUser();
   const user = useAuth();
   const isPurchased = false;
-  console.log("jfo",useAuth());
 
   const [activeTab, setActiveTab] = useState('overview');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-
-  const [reviews, setReviews] = useState([]);
   const { course, subjects, loading } = useCourseDetails(id, course_or_subject);
 
+  // const [course, setCourse] = useState(null);
+  // const [subjects, setSubjects] = useState([]);
+  const [reviews, setReviews] = useState([]);
+
+  // useEffect(() => {
+  //   if (!id) return;
+
+  //   apiClient.get(`/subjects/${id}`)
+  //     .then((res) => {
+  //       const data = res.data.data;
+  //       setCourse({
+  //         id,
+  //         name: data.subject_name,
+  //         description: data.subject_description || '',
+  //         image: data.image,
+  //         price: data.price,
+  //         total_chapter: data.total_chapter,
+  //         rating: Number(data.overall_rating || 0).toFixed(1),
+  //         total_users: data.total_users,
+  //       });
+
+  //       const subjectList = data.chapters.map((subject: any) => ({
+  //         id: subject.chapter_id,
+  //         name: subject.chapter_name,
+  //         resource_link:subject.resource_link,
+  //         price: subject.price || 0,
+  //         image: subject.image || '',
+  //       }));
+
+  //       setSubjects(subjectList);
+  //     })
+  //     .catch((err) => {
+  //       console.error("Failed to fetch course details:", err);
+  //     });
+  // }, [id]);
 
   useEffect(() => {
     if (!id) return;
 
-    apiClient.get(`/coursereviews/course/${id}`)
+    apiClient.get(`/subjectreviews/subject/${id}`)
       .then(res => {
         const approvedReviews = res.data.data.filter((review: any) => review.is_approved === 1);
         setReviews(approvedReviews);
@@ -53,24 +85,22 @@ const CourseDetail = () => {
 
     // Show error if course not found
     if (!courses && id) {
-      toast("Course not found", {
-        description: "The course you're looking for doesn't exist."
+      toast("Subject not found", {
+        description: "The subject you're looking for doesn't exist."
       });
       navigate('/courses');
     }
   }, [id, navigate, course]);
 
- 
-  if (loading) return <p>Loading...</p>;
+    if (loading) return <p>Loading...</p>;
   if (!course) return <p>No course found.</p>;
-
 
   const handlePurchase = () => {
     if (!user) {
       toast("Authentication required", {
         description: "Please sign in or create an account to purchase this course."
       });
-      navigate('/signin', { state: { redirectTo: `/course/${id}` } });
+      navigate('/signin', { state: { redirectTo: `/subject/${id}` } });
       return;
     }
 
@@ -113,10 +143,10 @@ const CourseDetail = () => {
             <div className="lg:w-2/3">
               <div className="flex flex-wrap gap-2 mb-3">
                 <Badge className="bg-secondary/80 hover:bg-secondary text-secondary-foreground">
-                  Course
+                  Subject
                 </Badge>
                 <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">
-                  Subjects
+                  Chapters
                 </Badge>
                 {/* {course.bestseller && (
                   <Badge className="bg-accent/90 hover:bg-accent text-white">
@@ -149,7 +179,7 @@ const CourseDetail = () => {
                 </div>
 
                 <span className="text-gray-600">
-                  {course?.total_subjects} Subjects
+                  {course?.total_subjects} Chapters
                 </span>
 
               </div>
@@ -173,7 +203,7 @@ const CourseDetail = () => {
                         <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
                         </svg>
-                        <span className="font-medium">You own this course</span>
+                        <span className="font-medium">You own this subject</span>
                       </div>
                     </div>
                   ) : (
@@ -221,7 +251,7 @@ const CourseDetail = () => {
                     <svg className="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path>
                     </svg>
-                    <span className="text-gray-600">Course</span>
+                    <span className="text-gray-600">Subject</span>
                   </div>
                   {/* <div className="flex">
                     <svg className="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -247,7 +277,7 @@ const CourseDetail = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="mb-8">
               <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="Chapter">Subjects</TabsTrigger>
+              <TabsTrigger value="Chapter">Chapters</TabsTrigger>
               <TabsTrigger value="reviews">Reviews</TabsTrigger>
             </TabsList>
 
@@ -255,7 +285,7 @@ const CourseDetail = () => {
 
 
               <div>
-                <h2 className="text-2xl font-bold mb-4">Course description</h2>
+                <h2 className="text-2xl font-bold mb-4">Subject description</h2>
                 <p className="mb-4">{course?.description}</p>
               </div>
 
@@ -264,10 +294,10 @@ const CourseDetail = () => {
 
             <TabsContent value="Chapter">
               <div>
-                <h2 className="text-2xl font-bold mb-6">Subject Chapter</h2>
+                <h2 className="text-2xl font-bold mb-6"> Chapter</h2>
                 <div className="mb-4">
                   <p className="text-muted-foreground">
-                    Total {course?.total_subjects} Subjects
+                    Total {course?.total_subjects} Chapters
                   </p>
                 </div>
 
@@ -291,16 +321,14 @@ const CourseDetail = () => {
                               <div className="flex-1 w-full flex flex-col md:flex-row md:items-center md:justify-between">
                                 <div>
                                   <p className="text-base font-semibold">{subject.name}</p>
-                                  <p className="text-muted-foreground text-sm">
-                                    Price: ₹{subject.price}
-                                  </p>
                                 </div>
 
                                 <Button
-                                  onClick={() => navigate(`/subject/${subject.id}`)}
+                                  onClick={() => navigate(`/chapter/${subject.id}`)}
                                   className="mt-2 md:mt-0"
+                                  disabled
                                 >
-                                  Go to Subject
+                                  Go to Chapter
                                 </Button>
                               </div>
                             </div>
@@ -311,7 +339,7 @@ const CourseDetail = () => {
                     ))}
                   </Accordion>
                 ) : (
-                    <h3 className="text-lg font-medium mb-2">No subjects found</h3>
+                    <h3 className="text-lg font-medium mb-2">No Chapters found</h3>
                 )}
 
               </div>
@@ -423,4 +451,4 @@ const CourseDetail = () => {
   );
 };
 
-export default CourseDetail;
+export default SubjectDetail;

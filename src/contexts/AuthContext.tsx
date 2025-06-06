@@ -51,6 +51,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       const userData = await getUserInfo();
+      console.log(userData,"user data");
       setUser(userData);
       setError(null);
       

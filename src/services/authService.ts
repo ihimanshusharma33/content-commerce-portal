@@ -63,7 +63,7 @@ export const getUserInfo = async (): Promise<User> => {
     
     // Attempt to get user info
     const response = await apiClient.get('/me');
-    
+    // console.log(response);
     // If we already have some user info in localStorage, we can construct a user object
     // even if the API call fails or is still in progress
     if (!response.data || response.status !== 200) {
@@ -85,12 +85,12 @@ export const getUserInfo = async (): Promise<User> => {
     }
     
     // If the API response includes the user info directly
-    if (response.data.data && response.data.data.user) {
+    if (response.data.data && response.data.data.id) {
       return {
-        id: response.data.data.user.id,
-        email: response.data.data.user.email || '',
-        name: response.data.data.user.name || '',
-        role: response.data.data.user.role === 'admin' ? 'admin' : 'student'
+        id: response.data.data.id,
+        email: response.data.data.email || '',
+        name: response.data.data.name || '',
+        role: response.data.data.role === 'admin' ? 'admin' : 'student'
       };
     }
     
@@ -102,7 +102,7 @@ export const getUserInfo = async (): Promise<User> => {
       role: response.data.role === 'admin' ? 'admin' : 'student'
     };
   } catch (error) {
-    throw error;
+    console.log(error);
   }
 };
 

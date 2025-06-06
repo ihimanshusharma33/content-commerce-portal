@@ -4,11 +4,9 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
-import { courses, purchaseCourse } from '@/lib/data';
 import { toast } from "@/components/ui/sonner";
 import {
   Dialog,
@@ -19,20 +17,27 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { X, AlertTriangle, Check, CreditCard, Wallet } from "lucide-react";
+import { useCourseDetails } from '@/hooks/useCourseDetails';
+import apiClient from '@/utils/apiClient';
+
+type EntityType = 'course' | 'subject';
 
 const PaymentPage = () => {
   const { courseId } = useParams<{ courseId: string }>();
+  const { courseOrSubject } = useParams<{ courseOrSubject: EntityType }>();
+
   const navigate = useNavigate();
-  const course = courses.find(c => c.id === courseId);
-  
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal'>('card');
+
+  const { course, subjects, loading } = useCourseDetails(courseId,courseOrSubject);
+
+  const [paymentMethod, setPaymentMethod] = useState<'phonepe'|'card' | 'paypal'>('card');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const [hasAgreed, setHasAgreed] = useState(false);
   const [formData, setFormData] = useState({
     agreeTerms: false,
   });
-  
+
   if (!course) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -48,42 +53,47 @@ const PaymentPage = () => {
       </div>
     );
   }
-  
+
   const handlePaymentMethodChange = (value: string) => {
-    setPaymentMethod(value as 'card' | 'paypal');
+    setPaymentMethod(value as 'phonepe'|'card' | 'paypal' );
   };
-  
+
   const handleTermsAgreement = () => {
     setHasAgreed(true);
-    setFormData({...formData, agreeTerms: true});
+    setFormData({ ...formData, agreeTerms: true });
     setIsTermsModalOpen(false);
   };
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.agreeTerms || !hasAgreed) {
       toast.error("Please agree to the terms and conditions");
       return;
     }
-    
+
     setIsProcessing(true);
-    
+
     // Simulate payment processing delay
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      purchaseCourse(course.id);
-      
-      toast.success("Payment successful!", {
-        description: `You now have access to ${course.title}`
+      const response = await apiClient.post('/phonepe-initiate', {
+        course_or_subject_id: course.id,
+        payment_type: courseOrSubject, 
+        amount: course.price,
       });
-      
-      navigate(`/course/${course.id}/content`);
-      
-    } catch (error) {
-      toast.error("Payment failed", {
-        description: "There was an issue processing your payment. Please try again."
+
+      const { redirect_url } = response.data.data;
+
+      if (redirect_url) {
+        window.location.href = redirect_url;
+      } else {
+        throw new Error("No redirect URL received");
+      }
+
+    } catch (error: any) {
+      console.error("Payment initiation failed:", error);
+      toast.error("Payment initiation failed", {
+        description: error?.response?.data?.message || "Something went wrong. Please try again.",
       });
     } finally {
       setIsProcessing(false);
@@ -94,14 +104,14 @@ const PaymentPage = () => {
   const openTermsModal = () => {
     setIsTermsModalOpen(true);
   };
-  
-  const price = course.discountPrice || course.price;
-  const showDiscount = course.discountPrice && course.discountPrice < course.price;
-  
+
+  const price = course?.discountPrice || course.price;
+  const showDiscount = course.price;
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      
+
       <main className="flex-grow bg-gray-50 py-8 sm:py-2">
         <div className="container-custom">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -110,23 +120,25 @@ const PaymentPage = () => {
               <Card className="overflow-hidden">
                 <div className="p-6">
                   <h2 className="text-xl font-medium mb-4">Order Summary</h2>
-                  
+
                   <div className="flex gap-4 mb-4">
                     <div className="w-20 h-16 rounded overflow-hidden flex-shrink-0">
-                      <img 
-                        src={course.image} 
-                        alt={course.title}
+                      <img
+                        src={course.image}
+                        alt={course.name}
                         className="w-full h-full object-cover"
                       />
                     </div>
                     <div>
-                      <h3 className="font-medium text-base">{course.title}</h3>
-                      <p className="text-base text-muted-foreground mb-1">by {course.instructor}</p>
+                      <h3 className="font-medium text-base">{course.name}</h3>
+                      {courseOrSubject==='course' &&(
+                        <p className="text-base text-muted-foreground mb-1">Semester: {course.semester}</p>
+                      )}
                       <div className="flex items-center">
-                        <span className="text-amber-500 mr-1 text-base">{course.rating.toFixed(1)}</span>
+                        <span className="text-amber-500 mr-1 text-base">{course.rating}</span>
                         <div className="flex">
                           {[...Array(5)].map((_, i) => (
-                            <svg 
+                            <svg
                               key={i}
                               className={`w-4 h-4 ${i < Math.round(course.rating) ? 'text-amber-400' : 'text-gray-300'}`}
                               xmlns="http://www.w3.org/2000/svg"
@@ -138,79 +150,92 @@ const PaymentPage = () => {
                           ))}
                         </div>
                         <span className="text-base ml-1 text-muted-foreground">
-                          ({course.reviewCount})
+                         ({course?.reviewCount})
                         </span>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="border-t pt-4 mt-4">
                     <div className="flex justify-between mb-2 text-base">
+                     {courseOrSubject==='course'?(
                       <span>Course Price</span>
-                      <span>${course.price.toFixed(2)}</span>
+                      ):(
+                      <span>Subject Price</span>
+                      )}
+                      <span>${course.price}</span>
                     </div>
-                    
+
                     {showDiscount && (
                       <div className="flex justify-between mb-2 text-green-600 text-base">
                         <span>Discount</span>
-                        <span>-${(course.price - course.discountPrice!).toFixed(2)}</span>
+                        <span>-${(course.price - course?.discountPrice!)}</span>
                       </div>
                     )}
-                    
+
                     <div className="flex justify-between font-medium text-xl mt-2 pt-2 border-t">
                       <span>Total</span>
-                      <span>${price.toFixed(2)}</span>
+                      <span>${price}</span>
                     </div>
                   </div>
-                  
                   <div className="mt-6 text-base">
-                    <div className="flex items-center gap-2 mb-2 text-gray-700">
-                      <Check className="h-5 w-5 text-green-500" />
-                      <span>Full lifetime access to course</span>
-                    </div>
-                    <div className="flex items-center gap-2 mb-2 text-gray-700">
-                      <Check className="h-5 w-5 text-green-500" />
-                      <span>Certificate of completion</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <Check className="h-5 w-5 text-green-500" />
-                      <span>30-day money-back guarantee</span>
-                    </div>
+                      {courseOrSubject==='course'?(
+                      <p className="m-3"><b>Subjects</b></p>
+                      ):(
+                      <p className="m-3"><b>Chapters</b></p>
+                      )}
+                    <hr />
+                    {subjects.map((subject) => (
+                      <>
+                        <div className="flex items-center gap-2 mb-2 text-gray-700">
+                          <Check className="h-5 w-5 text-green-500" />
+                          <span>{subject.name}</span>
+                        </div>
+                      </>
+                    ))}
                   </div>
                 </div>
+
               </Card>
             </div>
-            
+
             {/* Right Column - Payment Form */}
             <div className="lg:col-span-2">
               <Card className="p-6">
                 <h2 className="text-xl font-medium mb-6">Payment Method</h2>
-                
+
                 <form onSubmit={handleSubmit}>
-                  <RadioGroup 
+                  <RadioGroup
                     value={paymentMethod}
                     onValueChange={handlePaymentMethodChange}
                     className="mb-6"
                   >
                     <div className="flex items-center space-x-6">
                       <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="phonepe" id="phonepe" />
+                        <Label htmlFor="phonepe" className="flex items-center text-base">
+                          <Wallet className="w-5 h-5 mr-2" />
+                          Phone Pe
+                        </Label>
+                      </div>
+                      {/* <div className="flex items-center space-x-2">
                         <RadioGroupItem value="card" id="card" />
                         <Label htmlFor="card" className="flex items-center text-base">
                           <CreditCard className="w-5 h-5 mr-2" />
                           Credit / Debit Card
                         </Label>
                       </div>
-                      
+
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="paypal" id="paypal" />
                         <Label htmlFor="paypal" className="flex items-center text-base">
                           <Wallet className="w-5 h-5 mr-2" />
                           PayPal
                         </Label>
-                      </div>
+                      </div> */}
                     </div>
                   </RadioGroup>
-                  
+
                   {paymentMethod === 'card' ? (
                     <div className="space-y-4">
                       <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
@@ -226,11 +251,11 @@ const PaymentPage = () => {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="p-4 border rounded-lg mt-4">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-base font-medium">Payment Summary</span>
-                          <span className="text-base font-bold">${price.toFixed(2)}</span>
+                          <span className="text-base font-bold">${price}</span>
                         </div>
                         <p className="text-sm text-gray-600">
                           After clicking "Continue to Payment", you'll be redirected to our secure payment provider to complete your purchase.
@@ -246,16 +271,16 @@ const PaymentPage = () => {
                           </svg>
                         </div>
                         <div>
-                          <p className="text-blue-800 text-base">You'll be redirected to PayPal to complete your purchase securely.</p>
-                          <p className="text-blue-700 text-sm mt-1">Your account and payment details are protected by PayPal's encryption.</p>
+                          <p className="text-blue-800 text-base">You'll be redirected to PhonePe to complete your purchase securely.</p>
+                          <p className="text-blue-700 text-sm mt-1">Your account and payment details are protected by PhonePe's encryption.</p>
                         </div>
                       </div>
                     </div>
                   )}
-                  
+
                   <div className="flex items-start space-x-2 mt-6">
-                    <Checkbox 
-                      id="terms" 
+                    <Checkbox
+                      id="terms"
                       name="agreeTerms"
                       checked={formData.agreeTerms && hasAgreed}
                       onCheckedChange={(checked) => {
@@ -265,7 +290,7 @@ const PaymentPage = () => {
                           // Don't update checkbox state yet - wait for modal agreement
                         } else {
                           // Allow unchecking directly
-                          setFormData({...formData, agreeTerms: false});
+                          setFormData({ ...formData, agreeTerms: false });
                           setHasAgreed(false);
                         }
                       }}
@@ -275,17 +300,17 @@ const PaymentPage = () => {
                       I agree to the Terms of Service
                     </Label>
                   </div>
-                  
+
                   <div className="mt-6">
-                    <Button 
-                      type="submit" 
+                    <Button
+                      type="submit"
                       className="w-full bg-primary hover:bg-primary/90"
                       size="lg"
                       disabled={isProcessing || !formData.agreeTerms}
                     >
                       {isProcessing ? "Processing..." : `Continue to Payment`}
                     </Button>
-                    
+
                     <div className="mt-4 flex items-center justify-center text-gray-500 text-sm">
                       <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -299,16 +324,16 @@ const PaymentPage = () => {
           </div>
         </div>
       </main>
-      
+
       {/* Terms and Conditions Modal */}
-      <Dialog 
-        open={isTermsModalOpen} 
+      <Dialog
+        open={isTermsModalOpen}
         onOpenChange={(open) => {
           setIsTermsModalOpen(open);
           // If the dialog is being closed and not by agreement button
           if (!open && !hasAgreed) {
             // Make sure checkbox is unchecked
-            setFormData({...formData, agreeTerms: false});
+            setFormData({ ...formData, agreeTerms: false });
           }
         }}
       >
@@ -322,7 +347,7 @@ const PaymentPage = () => {
               Please read these terms carefully before proceeding.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 max-h-[60vh] overflow-y-auto py-2 text-base">
             <section>
               <h3 className="font-bold text-lg mb-2">Course Content Usage</h3>
@@ -336,7 +361,7 @@ const PaymentPage = () => {
                 <li>Recording, duplicating, or redistributing lectures, materials, or any course content is expressly forbidden</li>
               </ul>
             </section>
-            
+
             <section>
               <h3 className="font-bold text-lg mb-2">Payment & Refunds</h3>
               <p className="mb-2">
@@ -346,21 +371,21 @@ const PaymentPage = () => {
                 <span className="font-medium">Note on Payment Security:</span> We do not store your credit card details. All payment information is processed securely by our payment providers in compliance with PCI DSS standards.
               </p>
             </section>
-            
+
             <section>
               <h3 className="font-bold text-lg mb-2">Account Responsibility</h3>
               <p>
                 You are responsible for maintaining the confidentiality of your account and password. You agree to accept responsibility for all activities that occur under your account.
               </p>
             </section>
-            
+
             <section>
               <h3 className="font-bold text-lg mb-2">Termination</h3>
               <p>
                 We reserve the right to terminate or suspend access to our service immediately, without prior notice, for conduct that we believe violates these Terms of Service or is harmful to other users, us, or third parties, or for any other reason.
               </p>
             </section>
-            
+
             <div className="bg-amber-50 border border-amber-200 rounded-md p-4 mt-4">
               <div className="flex">
                 <AlertTriangle className="h-5 w-5 text-amber-500 mr-2 flex-shrink-0" />
@@ -370,7 +395,7 @@ const PaymentPage = () => {
               </div>
             </div>
           </div>
-          
+
           <DialogFooter className="flex flex-col sm:flex-row gap-2">
             <Button variant="outline" onClick={() => setIsTermsModalOpen(false)} className="text-base">
               I Need to Review
@@ -381,7 +406,7 @@ const PaymentPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       <Footer />
     </div>
   );

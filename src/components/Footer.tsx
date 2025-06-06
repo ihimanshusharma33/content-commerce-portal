@@ -44,40 +44,14 @@ const Footer = () => {
           <div>
             <h3 className="font-semibold text-lg mb-4">Quick Links</h3>
             <ul className="space-y-3">
-              <li><Link to="/courses" className="text-muted-foreground hover:text-primary">All Courses</Link></li>
               <li><Link to="/signup" className="text-muted-foreground hover:text-primary">Join Now</Link></li>
               <li><a href="#" className="text-muted-foreground hover:text-primary">About Us</a></li>
               <li><a href="#" className="text-muted-foreground hover:text-primary">Contact Us</a></li>
             </ul>
           </div>
           
-          <div>
-            <h3 className="font-semibold text-lg mb-4">Categories</h3>
-            <ul className="space-y-3">
-              <li><Link to="/courses?category=web-dev" className="text-muted-foreground hover:text-primary">Web Development</Link></li>
-              <li><Link to="/courses?category=data-science" className="text-muted-foreground hover:text-primary">Data Science</Link></li>
-              <li><Link to="/courses?category=mobile-dev" className="text-muted-foreground hover:text-primary">Mobile Development</Link></li>
-              <li><Link to="/courses?category=design" className="text-muted-foreground hover:text-primary">Design</Link></li>
-            </ul>
-          </div>
-          
-          <div>
-            <h3 className="font-semibold text-lg mb-4">Newsletter</h3>
-            <p className="text-muted-foreground mb-4">Subscribe to get updates on new courses and special offers.</p>
-            <form className="flex">
-              <input 
-                type="email" 
-                placeholder="Your email" 
-                className="flex-1 px-4 py-2 text-sm rounded-l-md border border-r-0 focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-              <button 
-                type="submit"
-                className="bg-primary hover:bg-primary/90 text-white px-3 py-2 rounded-r-md"
-              >
-                Subscribe
-              </button>
-            </form>
-          </div>
+         
+        
         </div>
         
         <div className="border-t border-gray-200 pt-6">

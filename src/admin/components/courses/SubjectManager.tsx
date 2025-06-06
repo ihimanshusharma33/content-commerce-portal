@@ -38,8 +38,10 @@ interface SubjectData {
   subject_id: number;
   subject_name: string;
   course_id: number;
+  price?: string | null;
+  discount?: string | null;
   image: string | null;
-  description: string | null;
+  description?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -60,6 +62,8 @@ const SubjectManager: React.FC = () => {
   const [subjectName, setSubjectName] = useState("");
   const [subjectDescription, setSubjectDescription] = useState("");
   const [subjectImage, setSubjectImage] = useState<File | null>(null);
+  const [subjectPrice, setSubjectPrice] = useState<string>("");
+  const [subjectDiscount, setSubjectDiscount] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [loadingCourses, setLoadingCourses] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -144,6 +148,14 @@ const SubjectManager: React.FC = () => {
         formData.append('description', subjectDescription);
       }
 
+      if (subjectPrice) {
+        formData.append('price', subjectPrice);
+      }
+
+      if (subjectDiscount) {
+        formData.append('discount', subjectDiscount);
+      }
+
       if (subjectImage) {
         formData.append('image', subjectImage);
       }
@@ -191,6 +203,14 @@ const SubjectManager: React.FC = () => {
 
       if (subjectDescription) {
         formData.append('description', subjectDescription);
+      }
+
+      if (subjectPrice) {
+        formData.append('price', subjectPrice);
+      }
+
+      if (subjectDiscount) {
+        formData.append('discount', subjectDiscount);
       }
 
       if (subjectImage) {
@@ -264,11 +284,15 @@ const SubjectManager: React.FC = () => {
       setSelectedSubject(subject);
       setSubjectName(subject.subject_name);
       setSubjectDescription(subject.description || "");
+      setSubjectPrice(subject.price || "");
+      setSubjectDiscount(subject.discount || "");
       setSubjectImage(null);
     } else {
       setSelectedSubject(null);
       setSubjectName("");
       setSubjectDescription("");
+      setSubjectPrice("");
+      setSubjectDiscount("");
       setSubjectImage(null);
     }
     setIsFormOpen(true);
@@ -278,6 +302,8 @@ const SubjectManager: React.FC = () => {
     setSelectedSubject(null);
     setSubjectName("");
     setSubjectDescription("");
+    setSubjectPrice("");
+    setSubjectDiscount("");
     setSubjectImage(null);
     setIsFormOpen(false);
     if (fileInputRef.current) {
@@ -314,6 +340,23 @@ const SubjectManager: React.FC = () => {
     subject.subject_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (subject.description && subject.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  // Add a function to format price display
+  const formatPrice = (price: string | null | undefined): string => {
+    if (!price) return "Free";
+    return `₹${Number(price).toFixed(2)}`;
+  };
+
+  // Calculate discounted price
+  const calculateDiscountedPrice = (price: string | null | undefined, discount: string | null | undefined): string | null => {
+    if (!price) return null;
+    if (!discount) return price;
+    
+    const priceNum = Number(price);
+    const discountNum = Number(discount);
+    
+    return (priceNum - (priceNum * (discountNum / 100))).toFixed(2);
+  };
 
   return (
     <div className="">
@@ -428,10 +471,37 @@ const SubjectManager: React.FC = () => {
                   )}
 
                   <CardContent className="p-4">
-                    <h3 className="font-medium text-sm">{subject.subject_name}</h3>
-                    <p className="text-sm text-gray-500 mt-1 h-10">
+                    <h3 className="font-medium text-base">{subject.subject_name}</h3>
+                    <p className="text-sm text-gray-500 mt-1 h-10 line-clamp-2">
                       {subject.description || "No description available"}
                     </p>
+
+                    {/* Price and Discount Display - FIXED */}
+                    <div className="mt-2">
+                      {subject.price ? (
+                        <div className="flex items-center">
+                          {subject.discount && Number(subject.discount) > 0 ? (
+                            <>
+                              <span className="text-sm font-bold text-blue-700">
+                                ₹{calculateDiscountedPrice(subject.price, subject.discount)}
+                              </span>
+                              <span className="text-xs text-gray-500 line-through ml-2">
+                                {formatPrice(subject.price)}
+                              </span>
+                              <Badge variant="outline" className="ml-2 bg-red-50 text-red-700 border-red-200 text-xs">
+                                {subject.discount}% OFF
+                              </Badge>
+                            </>
+                          ) : (
+                            <span className="text-sm font-bold text-blue-700">
+                              {formatPrice(subject.price)}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-sm font-bold text-green-600">Free</span>
+                      )}
+                    </div>
                   </CardContent>
 
                   <CardFooter className="p-4 pt-0 flex justify-end gap-2">
@@ -520,6 +590,29 @@ const SubjectManager: React.FC = () => {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Price and Discount Fields */}
+            <div className="space-y-1">
+              <Label htmlFor="subject-price">Price</Label>
+              <Input
+                id="subject-price"
+                type="text"
+                value={subjectPrice}
+                onChange={(e) => setSubjectPrice(e.target.value)}
+                placeholder="Enter subject price"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="subject-discount">Discount (%)</Label>
+              <Input
+                id="subject-discount"
+                type="text"
+                value={subjectDiscount}
+                onChange={(e) => setSubjectDiscount(e.target.value)}
+                placeholder="Enter discount percentage"
+              />
             </div>
           </div>
 

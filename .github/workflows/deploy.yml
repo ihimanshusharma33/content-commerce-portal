@@ -49,6 +49,6 @@ jobs:
             echo "📁 Unzipping dist.zip..."
             unzip -o dist.zip
             rm dist.zip
-            mv dist/* ./
+            rsync -a --delete dist/ ./
             rm -r dist
             echo "✅ Deployment complete!"

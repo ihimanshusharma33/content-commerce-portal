@@ -24,8 +24,10 @@ jobs:
       - name: 🏗️ Build project
         run: npm run build
 
-        # This assumes your build script outputs to a `dist` directory
-      - name: 📤 Upload dist to Hostinger
+      - name: 🗂️ List dist contents
+        run: ls -la dist
+
+      - name: 📤 Upload dist to Hostinger (domains/amplifilearn.com/public_html)
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.HOSTINGER_HOST }}
@@ -33,11 +35,12 @@ jobs:
           port: ${{ secrets.HOSTINGER_PORT }}
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
           source: "dist/*"
-          target: "public_html/"
+          target: "domains/amplifilearn.com/public_html/"
+          overwrite: true
+          strip_components: 1
+          debug: true
 
-          # Ensure the target directory is correct for your Hostinger setup
-
-      - name: 📂 Clean up and finalize on server
+      - name: 📂 List files on server after upload
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.HOSTINGER_HOST }}
@@ -45,4 +48,6 @@ jobs:
           port: ${{ secrets.HOSTINGER_PORT }}
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
           script: |
+            cd domains/amplifilearn.com/public_html
+            ls -la
             echo "✅ Deployment complete!"

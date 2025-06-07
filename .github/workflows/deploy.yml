@@ -19,24 +19,7 @@ jobs:
           node-version: '20'
 
       - name: 📥 Install dependencies
-        run: npm ci
-
-      - name: 🏗️ Build Vite project
-        run: npm run build
-
-      - name: 🧾 List contents of dist/
-        run: ls -la dist/
-
-      - name: 🔐 Test SSH connection
-        uses: appleboy/ssh-action@v0.1.7
-        with:
-          host: ${{ secrets.HOSTINGER_HOST }}
-          username: ${{ secrets.HOSTINGER_USER }}
-          port: ${{ secrets.HOSTINGER_PORT }}
-          key: ${{ secrets.HOSTINGER_SSH_KEY }}
-          script: |
-            echo "✅ SSH connection successful."
-            echo "Deployed via GitHub Actions 🚀" > public_html/deploy-check.txt
+        run: npm install
 
       - name: 📦 Zip dist folder
         run: zip -r dist.zip dist/

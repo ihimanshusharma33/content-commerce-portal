@@ -23,7 +23,8 @@ jobs:
 
       - name: 🏗️ Build project
         run: npm run build
-
+        
+        # This assumes your build script outputs to a `dist` directory
       - name: 📤 Upload dist to Hostinger
         uses: appleboy/scp-action@master
         with:

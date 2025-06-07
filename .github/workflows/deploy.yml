@@ -24,20 +24,17 @@ jobs:
       - name: 🏗️ Build project
         run: npm run build
 
-      - name: 📦 Zip dist folder
-        run: zip -r dist.zip dist/
-
-      - name: 📤 Upload zip to Hostinger
+      - name: 📤 Upload dist to Hostinger
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.HOSTINGER_HOST }}
           username: ${{ secrets.HOSTINGER_USER }}
           port: ${{ secrets.HOSTINGER_PORT }}
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
-          source: "dist.zip"
+          source: "dist/*"
           target: "public_html/"
 
-      - name: 📂 Unzip and deploy on server
+      - name: 📂 Clean up and finalize on server
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.HOSTINGER_HOST }}
@@ -45,10 +42,4 @@ jobs:
           port: ${{ secrets.HOSTINGER_PORT }}
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
           script: |
-            cd public_html
-            echo "📁 Unzipping dist.zip..."
-            unzip -o dist.zip
-            rm dist.zip
-            rsync -a --delete dist/ ./
-            rm -r dist
             echo "✅ Deployment complete!"

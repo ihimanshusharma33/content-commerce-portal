@@ -8,7 +8,7 @@ const Footer = () => {
   return (
     <footer className="bg-gray-50 pt-12 pb-8">
       <div className="container-custom">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-3">
           <div>
             <Link to="/" className="flex items-center space-x-2 mb-4">
               <BookOpen className="h-6 w-6 text-primary" />
@@ -41,17 +41,6 @@ const Footer = () => {
             </div>
           </div>
           
-          <div>
-            <h3 className="font-semibold text-lg mb-4">Quick Links</h3>
-            <ul className="space-y-3">
-              <li><Link to="/signup" className="text-muted-foreground hover:text-primary">Join Now</Link></li>
-              <li><a href="#" className="text-muted-foreground hover:text-primary">About Us</a></li>
-              <li><a href="#" className="text-muted-foreground hover:text-primary">Contact Us</a></li>
-            </ul>
-          </div>
-          
-         
-        
         </div>
         
         <div className="border-t border-gray-200 pt-6">

@@ -20,6 +20,10 @@ export interface Course {
   rating: string;
   total_users: number;
   reviewCount: number;
+  discountPrice: number;
+  isExpired:boolean;
+  expiryDaysLeft:number;
+  isPurchased:boolean;
 }
 
 type EntityType = 'course' | 'subject';
@@ -51,6 +55,10 @@ export const useCourseDetails = (id?: string, type: EntityType = 'course') => {
             rating: Number(data.overall_rating || 0).toFixed(1),
             total_users: data.total_users,
             reviewCount: data.total_review_count,
+            discountPrice:data.discount||0,
+            isExpired:data.is_expired,
+            expiryDaysLeft:data.expiry_days_left,
+            isPurchased:data.is_purchased
           });
 
           const subjectList = data.subjects.map((subject: any) => ({
@@ -73,6 +81,10 @@ export const useCourseDetails = (id?: string, type: EntityType = 'course') => {
             rating: Number(data.overall_rating || 0).toFixed(1),
             total_users: data.total_users || 0,
             reviewCount: data.total_review_count || 0,
+            discountPrice:data.discount || 0,
+            isExpired:data.is_expired,
+            expiryDaysLeft:data.expiry_days_left,
+            isPurchased:data.is_purchased
           });
 
           const chapterList = data.chapters.map((chapter: any) => ({

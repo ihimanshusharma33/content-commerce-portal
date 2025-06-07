@@ -201,7 +201,14 @@ const SubjectDetail = () => {
                 </div>
 
                 <div className="mb-4">
-                  {isPurchased ? (
+                  { course.expiryDaysLeft==0 &&  (
+                    <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
+                      <div className="flex items-center text-red-800">
+                        <span className="font-medium">Subject Access Expired</span>
+                      </div>
+                    </div>
+                  ) }
+                  {course.isPurchased && course.expiryDaysLeft!=0 ? (
                     <div className="bg-green-50 border border-green-200 rounded-md p-3 mb-4">
                       <div className="flex items-center text-green-800">
                         <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -232,20 +239,19 @@ const SubjectDetail = () => {
                     </div>
                   )}
 
-                  {isPurchased ? (
-                    <Button
-                      onClick={handleStartCourse}
-                      className="w-full bg-primary mb-2"
-                    >
-                      Continue Learning
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={handlePurchase}
-                      className="w-full bg-primary text-white hover:bg-primary/90 mb-2"
+                 {course.isPurchased && course.expiryDaysLeft!=0  ? (
+                    <Button onClick={handleStartCourse}
+                    className="w-full bg-primary text-white hover:bg-primary/90 mb-2"
                       size="lg"
                     >
-                      Buy Now
+                      Start Course
+                    </Button>
+                  ) : (
+                    <Button onClick={handlePurchase}
+                    className="w-full bg-primary text-white hover:bg-primary/90 mb-2"
+                      size="lg"
+                    >
+                      Buy Now - ₹{course?.price}
                     </Button>
                   )}
                 </div>
@@ -267,8 +273,8 @@ const SubjectDetail = () => {
                     <svg className="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                     </svg>
-                    <span className="text-gray-600">Full lifetime access</span>
-                  </div>
+                     <span className="text-gray-600">Expires in {course.expiryDaysLeft} Days </span>
+                 </div>
                 </div>
               </Card>
             </div>

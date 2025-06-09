@@ -30,15 +30,10 @@ const SignIn = () => {
   // Get login, loading, and error state from our auth context
   const { login, loading: isLoading, error, user, logout } = useAuth();
 
-  // Clear any existing auth state when sign-in page is loaded
-  // This helps prevent redirect loops with expired tokens
+  
   useEffect(() => {
     const clearAuthState = async () => {
-      // Clear auth state from session storage
       clearAuth();
-      
-      // If we have a user object in context but got redirected to sign-in
-      // (likely due to an expired token), perform a full logout
       if (user) {
         try {
           await logout();

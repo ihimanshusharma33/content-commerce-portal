@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { fetchCourses } from "../../../services/apiService";
+import { fetchCourses, getAssetUrl } from "../../../services/apiService";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import apiClient from "../../../utils/apiClient";
 import {
@@ -461,7 +461,7 @@ const SubjectManager: React.FC = () => {
                   {subject.image ? (
                     <div className="h-32 w-full overflow-hidden">
                       <img
-                        src={subject.image}
+                        src={getAssetUrl(subject.image)}
                         alt={subject.subject_name}
                         className="h-full w-full object-cover"
                       />
@@ -583,7 +583,7 @@ const SubjectManager: React.FC = () => {
                   <p className="text-sm text-gray-600 mb-1">Current image:</p>
                   <div className="h-24 w-auto rounded border overflow-hidden">
                     <img
-                      src={selectedSubject.image}
+                      src={getAssetUrl(selectedSubject.image)}
                       alt={selectedSubject.subject_name}
                       className="h-full object-cover"
                     />

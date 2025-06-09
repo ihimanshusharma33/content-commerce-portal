@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/use-toast";
+import { getAssetUrl } from "@/services/apiService";
 
 // Define interfaces based on the API response
 interface ChapterData {
@@ -551,7 +552,7 @@ const ChapterManager: React.FC = () => {
                   {chapter.image ? (
                     <div className="h-32 w-full overflow-hidden">
                       <img
-                        src={chapter.image}
+                        src={getAssetUrl(chapter.image)}
                         alt={chapter.chapter_name}
                         className="h-full w-full object-cover"
                       />
@@ -673,7 +674,7 @@ const ChapterManager: React.FC = () => {
                   <p className="text-sm text-gray-600 mb-1">Current image:</p>
                   <div className="h-24 w-auto rounded border overflow-hidden">
                     <img
-                      src={selectedChapter.image}
+                      src={getAssetUrl(selectedChapter.image)}
                       alt={selectedChapter.chapter_name}
                       className="h-full object-cover"
                     />

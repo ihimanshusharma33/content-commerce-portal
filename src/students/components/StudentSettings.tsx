@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Switch } from "@/components/ui/switch"; // adjust import if needed
+import { Switch } from "@/components/ui/switch";
+import { changeStudentPassword } from "@/services/studentService";
 
 const StudentSettings = () => {
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -10,6 +11,7 @@ const StudentSettings = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordMessage, setPasswordMessage] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const handlePasswordUpdate = async () => {
     if (newPassword !== confirmPassword) {
@@ -17,15 +19,26 @@ const StudentSettings = () => {
       return;
     }
 
+    if (!currentPassword || !newPassword) {
+      setPasswordMessage("Please fill in all password fields.");
+      return;
+    }
+
+    setIsUpdating(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await changeStudentPassword({
+        current_password: currentPassword,
+        new_password: newPassword,
+        new_password_confirmation: confirmPassword
+      });
       setPasswordMessage("Password updated successfully!");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (error) {
-      setPasswordMessage("Failed to update password. Try again.");
+      setPasswordMessage("Failed to update password. Please check your current password.");
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -104,13 +117,16 @@ const StudentSettings = () => {
           <div className="md:col-span-2">
             <button
               onClick={handlePasswordUpdate}
-              className="mt-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+              disabled={isUpdating}
+              className="mt-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
             >
-              Update Password
+              {isUpdating ? "Updating..." : "Update Password"}
             </button>
 
             {passwordMessage && (
-              <p className="mt-2 text-sm text-gray-700">{passwordMessage}</p>
+              <p className={`mt-2 text-sm ${passwordMessage.includes('success') ? 'text-green-600' : 'text-red-600'}`}>
+                {passwordMessage}
+              </p>
             )}
           </div>
         </div>

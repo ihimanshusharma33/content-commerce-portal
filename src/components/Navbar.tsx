@@ -1,27 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { BookOpen, User, Settings, Star, CreditCard, LogOut, BookOpenCheck } from "lucide-react";
-import { isAuthenticated, logoutUser, getCurrentUser } from '@/lib/data';
+import { BookOpen, LogOut } from "lucide-react";
+import { useAuth } from '@/contexts/AuthContext';
 
 const Navbar = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(isAuthenticated());
+  const { user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check authentication status
-    setIsLoggedIn(isAuthenticated());
-
-    // Add event listener for auth changes
-    const checkLoginStatus = () => {
-      setIsLoggedIn(isAuthenticated());
-    };
-
-    window.addEventListener('storage', checkLoginStatus);
-
     // Close dropdown when clicking outside
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -32,25 +22,22 @@ const Navbar = () => {
     document.addEventListener('mousedown', handleClickOutside);
 
     return () => {
-      window.removeEventListener('storage', checkLoginStatus);
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
-  const handleLogout = () => {
-    logoutUser();
-    setIsLoggedIn(false);
+  const handleLogout = async () => {
+    await logout();
     setDropdownOpen(false);
     navigate('/');
-    window.dispatchEvent(new Event('storage'));
   };
 
   return (
     <nav className="bg-white shadow-sm py-4 sticky top-0 z-50 border-b">
       <div className="container-custom flex items-center justify-between">
         <Link to="/" className="flex items-center space-x-2">
-          <BookOpen className="h-6 w-6 text-primary" />
-          <span className="font-bold text-xl">LearnHub</span>
+          <img src="./assests/images/Logo1.png" alt="Logo" className="h-12 w-12 p-0 m-0" />
+          <span className="text-xl font-bold text-primary">Amplifilearn</span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -58,7 +45,7 @@ const Navbar = () => {
           <Link to="/courses" className="text-gray-600 hover:text-primary font-medium">
             Browse Courses
           </Link>
-          {isLoggedIn && (
+          {user && (
             <Link
               to="/my-courses"
               className="text-gray-600 hover:text-primary font-medium"
@@ -68,10 +55,10 @@ const Navbar = () => {
           )}
 
           <div className="flex items-center space-x-2">
-            {isLoggedIn ? (
+            {user ? (
               <div className="relative flex flex-start" ref={dropdownRef}>
                 <Link to='/student-dashboard'
-                  className="flex text-gray-600  font-medium  hover:text-primary  items-center"
+                  className="flex text-gray-600 font-medium hover:text-primary items-center"
                 >
                   Account
                 </Link>
@@ -120,7 +107,7 @@ const Navbar = () => {
             >
               Browse Courses
             </Link>
-            {isLoggedIn && (
+            {user && (
               <Link
                 to="/my-courses"
                 className="text-gray-600 hover:text-primary py-2 font-medium"
@@ -129,23 +116,22 @@ const Navbar = () => {
                 My Courses
               </Link>
             )}
-            {isLoggedIn && (
+            {user && (
               <>
                 <Link
                   to="/student-dashboard?tab=profile"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="text-gray-600 hover:text-primary  py-2 flex items-center"
+                  className="text-gray-600 hover:text-primary py-2 flex items-center"
                 >
                   Dashboard
                 </Link>
-
               </>
             )}
             <div className="pt-2 border-t border-gray-100">
-              {isLoggedIn ? (
+              {user ? (
                 <Button
-                  onClick={() => {
-                    handleLogout();
+                  onClick={async () => {
+                    await handleLogout();
                     setMobileMenuOpen(false);
                   }}
                   variant="destructive"

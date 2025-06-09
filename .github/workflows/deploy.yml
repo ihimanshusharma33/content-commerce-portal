@@ -1,0 +1,53 @@
+name: 🚀 Deploy to Hostinger via SSH
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📦 Checkout repo
+        uses: actions/checkout@v3
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 📥 Install dependencies
+        run: npm install
+
+      - name: 🏗️ Build project
+        run: npm run build
+
+      - name: 🗂️ List dist contents
+        run: ls -la dist
+
+      - name: 📤 Upload dist to Hostinger (domains/amplifilearn.com/public_html)
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          port: ${{ secrets.HOSTINGER_PORT }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          source: "dist/*"
+          target: "domains/amplifilearn.com/public_html/"
+          overwrite: true
+          strip_components: 1
+          debug: true
+
+      - name: 📂 List files on server after upload
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          port: ${{ secrets.HOSTINGER_PORT }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          script: |
+            cd domains/amplifilearn.com/public_html
+            ls -la
+            echo "✅ Deployment complete!"

@@ -6,40 +6,54 @@ import { Badge } from '@/components/ui/badge';
 interface CourseCardProps {
   course: Course;
   isPurchased?: boolean;
+  course_or_subject: string;
+  isExpired?: boolean;
+  expiryDaysLeft?: number | null;
 }
 
-const CourseCard = ({ course, isPurchased = false }: CourseCardProps) => {
+const CourseCard = ({ course, isPurchased = false, course_or_subject, isExpired=false, expiryDaysLeft=null}: CourseCardProps) => {
   return (
-    <Link to={`/course/${course.id}`} className="block">
+    <Link to={`/${course_or_subject}/${course.id}`} className="block">
       <div className="bg-white rounded-lg overflow-hidden border shadow-sm card-hover h-full">
         <div className="relative">
-          <img 
-            src={course.image} 
+          <img
+            src={course.image}
             alt={course.title}
-            className="w-full h-48 object-cover" 
+            className="w-full h-48 object-cover"
           />
-          
+
           {/* Labels */}
           <div className="absolute top-3 left-3 flex flex-wrap gap-1">
+          
             {course.bestseller && (
               <Badge className="bg-accent text-white">Bestseller</Badge>
             )}
             {isPurchased && (
               <Badge className="bg-green-500 text-white">Purchased</Badge>
             )}
+              {isExpired ? (
+              <Badge className="bg-red-500 text-white">Expired</Badge>
+            ) : (
+              expiryDaysLeft !== null && (
+                <Badge className="bg-yellow-500 text-white">Expires in {expiryDaysLeft} days</Badge>
+              )
+            )}
           </div>
         </div>
-        
+
         <div className="p-4">
           <h3 className="text-lg font-semibold leading-tight mb-1 line-clamp-2">{course.title}</h3>
-          <p className="text-sm text-muted-foreground mb-2">{course.instructor}</p>
-          
+          {course_or_subject === "course" && (
+            <p className="text-sm text-muted-foreground mb-2">
+              Semester: {course?.semester}
+            </p>
+          )}
           <div className="flex items-center mb-2">
             <div className="flex items-center">
-              <span className="text-amber-500 font-semibold">{course.rating.toFixed(1)}</span>
+              <span className="text-amber-500 font-semibold">{Number(course.rating).toFixed(1)}</span>
               <div className="flex ml-1">
                 {[...Array(5)].map((_, i) => (
-                  <svg 
+                  <svg
                     key={i}
                     className={`w-4 h-4 ${i < Math.round(course.rating) ? 'text-amber-400' : 'text-gray-300'}`}
                     xmlns="http://www.w3.org/2000/svg"
@@ -53,21 +67,24 @@ const CourseCard = ({ course, isPurchased = false }: CourseCardProps) => {
               <span className="ml-1 text-xs text-gray-500">({course.reviewCount})</span>
             </div>
           </div>
-          
+
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <span className="text-xs px-2 py-1 bg-secondary rounded-full">{course.level}</span>
-              <span className="text-xs text-gray-500">{course.duration}</span>
+              <span className="text-xs px-2 py-1 bg-secondary rounded-full">
+                {course_or_subject && (
+                  course_or_subject.charAt(0).toUpperCase() + course_or_subject.slice(1)
+                )}
+              </span>
             </div>
-            
+
             <div>
               {course.discountPrice ? (
                 <div className="text-right">
-                  <span className="font-bold">${course.discountPrice.toFixed(2)}</span>
-                  <span className="text-gray-400 line-through text-sm ml-1">${course.price.toFixed(2)}</span>
+                  <span className="font-bold">${course.discountPrice}</span>
+                  <span className="text-gray-400 line-through text-sm ml-1">{Number(course.price).toFixed(1)}</span>
                 </div>
               ) : (
-                <span className="font-bold">${course.price.toFixed(2)}</span>
+                <span className="font-bold">${Number(course.price).toFixed(2)}</span>
               )}
             </div>
           </div>

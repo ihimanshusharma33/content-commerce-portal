@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,74 +14,77 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { clearAuth, setToken, setupAuthHeader } from '../services/authService';
-import apiClient from '../utils/apiClient';
+import { useAuth } from '../contexts/AuthContext';
+import { clearAuth } from '../services/authService';
 
 const SignIn = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get redirectTo from location state or default to '/student-dashboard'
+  const redirectTo = (location.state as any)?.redirectTo || '/student-dashboard';
+  
+  // Get login, loading, and error state from our auth context
+  const { login, loading: isLoading, error, user, logout } = useAuth();
 
-  // Clear auth data when the sign-in page is loaded
+  
   useEffect(() => {
-    clearAuth();
+    const clearAuthState = async () => {
+      clearAuth();
+      if (user) {
+        try {
+          await logout();
+        } catch (error) {
+          console.error("Logout error:", error);
+          // Even if logout API fails, we've already cleared local state
+        }
+      }
+    };
+    
+    clearAuthState();
+    // Only run this once when the component mounts
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  
+  // Redirect if user becomes authenticated during the session
+  useEffect(() => {
+    // Only redirect if we have a user AND we're not in the process of clearing auth
+    if (user && !isLoading) {
+      // Check role to determine where to redirect
+      if (user.role === 'admin') {
+        navigate('/admin-dashboard', { replace: true });
+      } else {
+        navigate(redirectTo, { replace: true });
+      }
+    }
+  }, [user, navigate, redirectTo, isLoading]);
+  
+  // Display error message if login fails
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Login failed",
+        description: error,
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
 
     try {
-      // Call the actual API endpoint
-      const response = await apiClient.post('/login', {
-        email,
-        password
-      });
-
-      // Check if the login was successful
-      if (response.data.status && response.data.data.token) {
-        // Store the token
-        const token = response.data.data.token;
-        setToken(token);
-        setupAuthHeader(token);
-
-        // Show success message
-        toast({
-          title: "Login successful",
-          description: response.data.message || "Welcome back!",
-        });
-
-        // Determine where to navigate based on user role (which might be extracted from the token)
-        // For now, assume we redirect to a default dashboard
-        if (email === 'admin@lms.com') {
-          navigate('/admin-dashboard');
-        } else {
-          navigate('/student-dashboard');
-        }
-      } else {
-        // Handle unsuccessful login but with a 200 response
-        toast({
-          title: "Login failed",
-          description: response.data.message || "Invalid credentials. Please try again.",
-          variant: "destructive",
-        });
-      }
+      // Call the login function from our auth context
+      await login(email, password);
+      
+      // The redirection will be handled by the useEffect above
+      // This prevents double redirects and multiple state updates
     } catch (error: any) {
+      // Error is handled by the useEffect above
       console.error('Login error:', error);
-      
-      // Extract and display the error message from the API response
-      const errorMessage = error.response?.data?.message || 
-                          "Unable to sign in. Please check your credentials and try again.";
-      
-      toast({
-        title: "Login failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -91,8 +94,8 @@ const SignIn = () => {
   };
 
   const fillAdminCredentials = () => {
-    setEmail('admin@lms.com');
-    setPassword('admin123');
+    setEmail('oberge@example.com');
+    setPassword('password');
   };
 
   return (

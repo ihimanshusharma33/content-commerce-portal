@@ -54,7 +54,7 @@ const PaymentModal = ({ isOpen, onClose, course, onPaymentComplete }: PaymentMod
           <div className="flex items-center justify-between">
             <span className="font-medium">Price:</span>
             <span className="font-bold">
-              ${course.discountPrice ? course.discountPrice.toFixed(2) : course.price.toFixed(2)}
+              ${course.discountPrice ? course.discountPrice : course.price}
             </span>
           </div>
           

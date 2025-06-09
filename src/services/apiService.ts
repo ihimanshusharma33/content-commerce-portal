@@ -51,6 +51,7 @@ export interface User {
   name: string;
   email: string;
   password?: string;
+  password_confirmation?:string;
   role?: string;
   created_at?: string;
   updated_at?: string;
@@ -341,9 +342,11 @@ export const createUser = (userData: Partial<User>): Promise<User> => {
     name: userData.name,
     email: userData.email,
     password: userData.password,
+    password_confirmation: userData.password_confirmation,
+
   });
   
-  return apiClient.post('/signup', formData)
+  return apiClient.post('/register', formData)
     .then(response => {
       if (response.data.status && response.data.data) {
         return mapUserFromApi(response.data.data);

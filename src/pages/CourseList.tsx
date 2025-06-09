@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Filter, X } from "lucide-react"; // Import icons
+import { Filter, Loader2, X } from "lucide-react"; // Import icons
 import { Course, Subject } from 'types';
 import { fetchCourses, fetchSubjectsByCourse } from '@/services/apiService';
 import apiClient from '@/utils/apiClient';
@@ -31,6 +31,9 @@ const CourseList = () => {
   const [filteredCourses, setFilteredCourses] = useState(courses);
   const [visibleSubjectCount, setVisibleSubjectCount] = useState(6);
   const [visibleCourseCount, setVisibleCourseCount] = useState(3);
+
+  const [loadingCourses, setLoadingCourses] = useState(true);
+  const [loadingDetailedCourses, setLoadingDetailedCourses] = useState(true);
 
   const user = getCurrentUser();
   const purchasedCourses = user?.purchasedCourses || [];
@@ -62,11 +65,12 @@ const CourseList = () => {
         setcategories(Object.values(grouped));
       })
       .catch((error) => console.error("Failed to fetch courses:", error))
-
   }, []);
 
 
   useEffect(() => {
+    setLoadingCourses(true);
+
     apiClient.get('/courses')
       .then((res) => {
         const detailcourse = res.data.data;
@@ -77,21 +81,30 @@ const CourseList = () => {
           description: courseDetail.description || '',
           price: courseDetail.price || 0,
           semester: courseDetail.semester,
-          discountPrice: courseDetail.discountPrice || 0,
+          discountPrice: courseDetail.discount || 0,
           rating: courseDetail.average_rating || 0,
           image: courseDetail.image,
-          reviewCount: courseDetail.total_reviews
+          reviewCount: courseDetail.total_reviews,
+          isExpired:courseDetail.is_expired,
+          expiryDaysLeft:courseDetail.expiry_days_left,
+          isPurchased:courseDetail.is_purchased
         }));
 
         setdetailedCourses(mappedCourses);
       })
       .catch((err) => {
         console.error("Failed to fetch subjects:", err);
-      });
+      })
+       .finally(() => setLoadingCourses(false));
+      
   }, []);
+
+ 
 
   // console.log(detailedCourses);
   useEffect(() => {
+     setLoadingDetailedCourses(true);
+
     apiClient.get('/subjects')
       .then((res) => {
         const subjects = res.data.data;
@@ -102,17 +115,23 @@ const CourseList = () => {
           description: sub.description || '',
           category: sub.course_id,
           price: sub.price || 0,
-          discountPrice: sub.discountPrice,
+          discountPrice: sub.discount,
           rating: sub.average_rating || 0,
           image: sub.image,
-          reviewCount: sub.total_reviews
+          reviewCount: sub.total_reviews,
+          isExpired:sub.is_expired,
+          expiryDaysLeft:sub.expiry_days_left,
+          isPurchased:sub.is_purchased
+
         }));
 
         setcourses(mappedCourses);
       })
       .catch((err) => {
         console.error("Failed to fetch subjects:", err);
-      });
+      })
+      .finally(() => setLoadingDetailedCourses(false));
+
   }, []);
 
 
@@ -222,6 +241,10 @@ const CourseList = () => {
     return ids.every(id => selectedCategories.includes(id));
   };
 
+   if (loadingCourses || loadingDetailedCourses) 
+    return <div className="flex justify-center items-center min-h-screen">
+  <Loader2 className="h-8 w-8 text-primary animate-spin mr-2" />
+</div>;
   // Render filters content (shared between mobile and desktop)
   const renderFiltersContent = () => (
     <>
@@ -418,7 +441,13 @@ const CourseList = () => {
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredDetailedCourses.slice(0, visibleCourseCount).map((course) => (
-                      <CourseCard key={course.id} course={course}  course_or_subject={"course"}/>
+                      <CourseCard
+                       isExpired={course.isExpired} 
+                       expiryDaysLeft={course.expiryDaysLeft} 
+                       key={course.id} 
+                       course={course}  
+                       isPurchased={course.isPurchased}
+                       course_or_subject={"course"}/>
                     ))}
                   </div>
 
@@ -455,8 +484,10 @@ const CourseList = () => {
                     {filteredCourses.slice(0, visibleSubjectCount).map((course) => (
                       <CourseCard
                         key={course.id}
+                        isExpired={course.isExpired} 
+                        expiryDaysLeft={course.expiryDaysLeft}
                         course={course}
-                        isPurchased={purchasedCourses.includes(course.id)}
+                        isPurchased={course.isPurchased}
                         course_or_subject={"subject"}
                       />
                     ))}

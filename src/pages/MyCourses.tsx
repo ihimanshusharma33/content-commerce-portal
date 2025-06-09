@@ -42,7 +42,9 @@ useEffect(() => {
               reviewCount: details.total_reviews,
               type: item.payment_type,
               payment_id: details.id,
-              localId: `${item.payment_type}-${item.course_or_subject_id}-${index}`, // unique key
+              isExpired:item.is_expired,
+              expiryDaysLeft:item.days_left,
+              localId: `${item.payment_type}-${item.course_or_subject_id}-${index}`, 
             };
           });
 
@@ -55,7 +57,7 @@ useEffect(() => {
     })
     .finally(() => setLoading(false));
 }, [user, navigate,authLoading]);
-
+console.log(purchasedCourses);
 
   if (loading) return   <div className="flex justify-center items-center min-h-screen">
   <Loader2 className="h-8 w-8 text-primary animate-spin mr-2" />
@@ -84,6 +86,8 @@ useEffect(() => {
                   course={course}
                   course_or_subject={course.type}
                   isPurchased={true}
+                  isExpired={course.isExpired}
+                  expiryDaysLeft={course.expiryDaysLeft}
                   key={`${course.type}-${course.course_id}-${index}`} 
                 />
               ))}

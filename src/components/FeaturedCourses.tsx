@@ -38,6 +38,8 @@ const FeaturedCourses = () => {
             rating: Number(details.average_rating || 0).toFixed(1), 
             image: details.image,
             reviewCount:details.total_reviews,
+            isExpired:details.is_expired,
+            expiryDaysLeft:details.expiry_days_left,
           };
         });
 
@@ -73,6 +75,8 @@ const FeaturedCourses = () => {
               <CourseCard
                 course={course}
                 course_or_subject={course.type}
+                isExpired={course.isExpired}
+                expiryDaysLeft={course.expiryDaysLeft}
                 isPurchased={purchasedCourses.includes(course.id)}
               />
 

@@ -7,9 +7,11 @@ interface CourseCardProps {
   course: Course;
   isPurchased?: boolean;
   course_or_subject: string;
+  isExpired?: boolean;
+  expiryDaysLeft?: number | null;
 }
 
-const CourseCard = ({ course, isPurchased = false, course_or_subject }: CourseCardProps) => {
+const CourseCard = ({ course, isPurchased = false, course_or_subject, isExpired=false, expiryDaysLeft=null}: CourseCardProps) => {
   return (
     <Link to={`/${course_or_subject}/${course.id}`} className="block">
       <div className="bg-white rounded-lg overflow-hidden border shadow-sm card-hover h-full">
@@ -22,11 +24,19 @@ const CourseCard = ({ course, isPurchased = false, course_or_subject }: CourseCa
 
           {/* Labels */}
           <div className="absolute top-3 left-3 flex flex-wrap gap-1">
+          
             {course.bestseller && (
               <Badge className="bg-accent text-white">Bestseller</Badge>
             )}
             {isPurchased && (
               <Badge className="bg-green-500 text-white">Purchased</Badge>
+            )}
+              {isExpired ? (
+              <Badge className="bg-red-500 text-white">Expired</Badge>
+            ) : (
+              expiryDaysLeft !== null && (
+                <Badge className="bg-yellow-500 text-white">Expires in {expiryDaysLeft} days</Badge>
+              )
             )}
           </div>
         </div>
@@ -61,7 +71,7 @@ const CourseCard = ({ course, isPurchased = false, course_or_subject }: CourseCa
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <span className="text-xs px-2 py-1 bg-secondary rounded-full">
-               {course_or_subject && (
+                {course_or_subject && (
                   course_or_subject.charAt(0).toUpperCase() + course_or_subject.slice(1)
                 )}
               </span>
@@ -70,7 +80,7 @@ const CourseCard = ({ course, isPurchased = false, course_or_subject }: CourseCa
             <div>
               {course.discountPrice ? (
                 <div className="text-right">
-                  <span className="font-bold">${course.discountPrice.toFixed(2)}</span>
+                  <span className="font-bold">${course.discountPrice}</span>
                   <span className="text-gray-400 line-through text-sm ml-1">{Number(course.price).toFixed(1)}</span>
                 </div>
               ) : (

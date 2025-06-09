@@ -94,8 +94,8 @@ const SignIn = () => {
   };
 
   const fillAdminCredentials = () => {
-    setEmail('admin@lms.com');
-    setPassword('admin123');
+    setEmail('oberge@example.com');
+    setPassword('password');
   };
 
   return (

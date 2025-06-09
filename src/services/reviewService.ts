@@ -18,7 +18,6 @@ const mapCourseReviewFromApi = (review: any): CourseReview => {
     course_id: reviewData.course_id,
     rating: reviewData.rating || 0,
     content: reviewData.content || reviewData.review_content || reviewData.review_description || '',
-    status: status,
     is_approved: reviewData.is_approved,
     created_at: reviewData.created_at || new Date().toISOString(),
     updated_at: reviewData.updated_at || new Date().toISOString(),
@@ -234,3 +233,9 @@ export const getApprovedSubjectReviews = async (): Promise<SubjectReview[]> => {
     return [];
   }
 };
+
+export async function fetchMyReviews() {
+  const response = await apiClient.get("/student/my-reviews");
+  if (response.data.status !== "success") throw new Error(response.data.message || "Failed to fetch reviews");
+  return response.data.data;
+}

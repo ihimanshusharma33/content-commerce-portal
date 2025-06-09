@@ -1,43 +1,64 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   User, Mail, GraduationCap, Calendar, MapPin, Phone, Edit, ShieldCheck, LockKeyhole, Info
 } from 'lucide-react';
+import { getStudentProfile, updateStudentProfile } from '@/services/studentService';
 
-interface User {
-  name: string;
-  email: string;
-  purchasedCourses: string[];
-  joinDate?: Date;
-  avatar?: string;
-  phone?: string;
-  location?: string;
-  bio?: string;
-  id: number;
-}
-
-interface StudentProfileProps {
-  user: User;
-}
-
-const StudentProfile: React.FC<StudentProfileProps> = ({ user }) => {
+const StudentProfile: React.FC = () => {
+  const [user, setUser] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    name: user.name,
-    email: user.email,
-    phone: user.phone || "+91 1234567890",
-    location: user.location || "India",
-    bio: user.bio || "Passionate learner focused on web development and UI design. Currently expanding my skills in React and TypeScript."
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
   });
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const profile = await getStudentProfile();
+        setUser(profile);
+        setFormData({
+          name: profile.name || '',
+          email: profile.email || '',
+          phone: profile.phone || '',
+          address: profile.address || '',
+        });
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
-    console.log("Saving updated user info:", formData);
-    setIsEditing(false);
+  const handleSave = async () => {
+    try {
+      const updatedProfile = await updateStudentProfile(formData);
+      setUser(updatedProfile);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      // You might want to show an error toast here
+    }
   };
+
+  if (loading) {
+    return <div className="text-center py-8">Loading profile...</div>;
+  }
+
+  if (!user) {
+    return <div className="text-center py-8">Failed to load profile</div>;
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -49,13 +70,19 @@ const StudentProfile: React.FC<StudentProfileProps> = ({ user }) => {
         </h2>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">Enrolled Courses</span>
-            <span className="font-medium">{user.purchasedCourses.length}</span>
+            <span className="text-sm text-gray-600">Account Status</span>
+            <span className="font-medium text-green-600">Active</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600">Member Since</span>
             <span className="font-medium">
-              {user.joinDate ? new Date(user.joinDate).toLocaleDateString() : '27th May 2025'}
+              {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600">Email Verified</span>
+            <span className="font-medium">
+              {user.email_verified_at ? 'Yes' : 'No'}
             </span>
           </div>
         </div>
@@ -115,42 +142,28 @@ const StudentProfile: React.FC<StudentProfileProps> = ({ user }) => {
               ) : (
                 <div className="flex items-center bg-gray-50 px-3 py-2 rounded-md text-gray-800">
                   <Phone className="h-4 w-4 text-gray-500 mr-2" />
-                  {formData.phone}
+                  {formData.phone || 'Not provided'}
                 </div>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">Location</label>
+              <label className="block text-sm font-medium text-gray-500 mb-1">Address</label>
               {isEditing ? (
                 <input
                   type="text"
-                  name="location"
-                  value={formData.location}
+                  name="address"
+                  value={formData.address}
                   onChange={handleChange}
                   className="w-full border rounded-md px-3 py-2"
                 />
               ) : (
                 <div className="flex items-center bg-gray-50 px-3 py-2 rounded-md text-gray-800">
                   <MapPin className="h-4 w-4 text-gray-500 mr-2" />
-                  {formData.location}
+                  {formData.address || 'Not provided'}
                 </div>
               )}
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-500 mb-1">Bio</label>
-            {isEditing ? (
-              <textarea
-                name="bio"
-                value={formData.bio}
-                onChange={handleChange}
-                className="w-full border rounded-md px-3 py-2"
-              />
-            ) : (
-              <div className="bg-gray-50 px-3 py-2 rounded-md text-gray-800">{formData.bio}</div>
-            )}
           </div>
         </div>
 

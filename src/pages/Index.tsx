@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import Hero from '@/components/Hero';
 import FeaturedCourses from '@/components/FeaturedCourses';
@@ -6,6 +5,7 @@ import CourseCategories from '@/components/CourseCategories';
 import Footer from '@/components/Footer';
 import Navbar from '@/components/Navbar';
 import { checkAuth } from '@/lib/data';
+import FAQ from '@/components/FAQ';
 
 const Index = () => {
   useEffect(() => {
@@ -20,6 +20,7 @@ const Index = () => {
         <Hero />
         <CourseCategories />
         <FeaturedCourses />
+        <FAQ />
         {/* More sections can be added here */}
       </main>
       <Footer />

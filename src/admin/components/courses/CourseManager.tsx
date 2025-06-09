@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { fetchCourses, createCourse, updateCourse, deleteCourse } from "../../../services/apiService";
+import { fetchCourses, createCourse, updateCourse, deleteCourse, getAssetUrl } from "../../../services/apiService";
 import { Course } from "../../../services/apiService"; // Import directly from apiService
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -286,7 +286,7 @@ const CourseManager: React.FC = () => {
                     {course.image ? (
                       <div className="h-auto mt-2  w-full overflow-hidden">
                         <img
-                          src={course.image}
+                          src={getAssetUrl(course.image)}
                           alt={course.name}
                           className="h-full w-full object-fit transition-transform hover:scale-105 duration-300"
                         />

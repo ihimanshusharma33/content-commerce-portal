@@ -503,3 +503,9 @@ export const createSubjectReview = (subjectId: number, content: string, rating: 
   return apiClient.post('/subject-reviews', formData)
     .then(response => response.data);
 };
+ 
+export function getAssetUrl(path?: string | null): string | undefined {
+  if (!path) return undefined;
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  return `https://amplifilearn.com/api/storage/app/public/${path.replace(/^\\\\+|^\\\\+/, "")}`;
+}

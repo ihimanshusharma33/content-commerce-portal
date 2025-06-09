@@ -115,22 +115,22 @@ const StudentDashboard: React.FC = () => {
         <div className={`p-6 ${!isMobile ? 'mt-4' : ''}`}>
           {/* Profile - Default View */}
           {activeSection === "profile" && (
-            <Profile user={{ id: 1, name: "John Doe", email: "john.doe@example.com", purchasedCourses: [] }} />
+            <Profile />
           )}
 
           {/* My Courses */}
           {activeSection === "my-courses" && (
-            <MyCourses courses={[]} />
+            <MyCourses />
           )}
 
           {/* My Reviews */}
           {activeSection === "reviews" && (
-            <MyReviews reviews={[]} />
+            <MyReviews />
           )}
 
           {/* Payment History */}
           {activeSection === "payment-history" && (
-            <PaymentHistory payments={[]} />
+            <PaymentHistory />
           )}
 
           {/* Settings */}

@@ -40,9 +40,10 @@ import {
 interface ReviewsSectionProps { }
 
 const ReviewsSection: React.FC<ReviewsSectionProps> = () => {
-  // All state variables remain the same
+  // All state variables with new rating filter
   const [activeTab, setActiveTab] = useState<'courses' | 'subjects'>('courses');
   const [statusFilter, setStatusFilter] = useState<'pending' | 'approved'>('pending');
+  const [ratingFilter, setRatingFilter] = useState<number | 'all'>('all');
   const [courseReviews, setCourseReviews] = useState<CourseReview[]>([]);
   const [subjectReviews, setSubjectReviews] = useState<SubjectReview[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -352,47 +353,76 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = () => {
     </div>
   );
 
-  // Filter reviews by status - remains the same
+  // Enhanced filter reviews by status and rating
   const filteredCourseReviews = courseReviews.filter(review => {
-    if (statusFilter === 'approved') {
-      return review.status === 'approved' || review.is_approved === 1 || review.is_approved === true;
-    } else {
-      return review.status === 'pending' || review.is_approved === 0 || review.is_approved === false;
-    }
+    // Status filter
+    const statusMatch = statusFilter === 'approved' 
+      ? (review.status === 'approved' || review.is_approved === 1 || review.is_approved === true)
+      : (review.status === 'pending' || review.is_approved === 0 || review.is_approved === false);
+    
+    // Rating filter
+    const ratingMatch = ratingFilter === 'all' || review.rating === ratingFilter;
+    
+    return statusMatch && ratingMatch;
   });
 
   const filteredSubjectReviews = subjectReviews.filter(review => {
+    // Status filter
+    const statusMatch = statusFilter === 'approved' 
+      ? (review.status === 'approved' || review.is_approved === 1 || review.is_approved === true)
+      : (review.status === 'pending' || review.is_approved === 0 || review.is_approved === false);
+    
+    // Rating filter
+    const ratingMatch = ratingFilter === 'all' || review.rating === ratingFilter;
+    
+    return statusMatch && ratingMatch;
+  });
+
+  // Enhanced badge counts with rating consideration
+  const pendingCourseCount = courseReviews.filter(r => {
+    const isPending = r.status === 'pending' || r.is_approved === 0 || r.is_approved === false;
+    const ratingMatch = ratingFilter === 'all' || r.rating === ratingFilter;
+    return isPending && ratingMatch;
+  }).length;
+
+  const pendingSubjectCount = subjectReviews.filter(r => {
+    const isPending = r.status === 'pending' || r.is_approved === 0 || r.is_approved === false;
+    const ratingMatch = ratingFilter === 'all' || r.rating === ratingFilter;
+    return isPending && ratingMatch;
+  }).length;
+
+  const approvedCourseCount = courseReviews.filter(r => {
+    const isApproved = r.status === 'approved' || r.is_approved === 1 || r.is_approved === true;
+    const ratingMatch = ratingFilter === 'all' || r.rating === ratingFilter;
+    return isApproved && ratingMatch;
+  }).length;
+
+  const approvedSubjectCount = subjectReviews.filter(r => {
+    const isApproved = r.status === 'approved' || r.is_approved === 1 || r.is_approved === true;
+    const ratingMatch = ratingFilter === 'all' || r.rating === ratingFilter;
+    return isApproved && ratingMatch;
+  }).length;
+
+  // Helper function to get rating distribution
+  const getRatingDistribution = (reviews: (CourseReview | SubjectReview)[]) => {
+    const distribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    reviews.forEach(review => {
+      if (review.rating >= 1 && review.rating <= 5) {
+        distribution[Math.round(review.rating)]++;
+      }
+    });
+    return distribution;
+  };
+
+  // Get current reviews for rating distribution
+  const currentReviews = activeTab === 'courses' ? courseReviews : subjectReviews;
+  const ratingDistribution = getRatingDistribution(currentReviews.filter(review => {
     if (statusFilter === 'approved') {
       return review.status === 'approved' || review.is_approved === 1 || review.is_approved === true;
     } else {
       return review.status === 'pending' || review.is_approved === 0 || review.is_approved === false;
     }
-  });
-
-  // Badge counts - remains the same
-  const pendingCourseCount = courseReviews.filter(r =>
-    r.status === 'pending' || r.is_approved === 0 || r.is_approved === false
-  ).length;
-
-  const pendingSubjectCount = subjectReviews.filter(r =>
-    r.status === 'pending' || r.is_approved === 0 || r.is_approved === false
-  ).length;
-
-  const approvedCourseCount = courseReviews.filter(r =>
-    r.status === 'approved' || r.is_approved === 1 || r.is_approved === true
-  ).length;
-
-  const approvedSubjectCount = subjectReviews.filter(r =>
-    r.status === 'approved' || r.is_approved === 1 || r.is_approved === true
-  ).length;
-
-  // Check loading state - remains the same
-  const showInitialLoading = loading && (courseReviews.length === 0 || subjectReviews.length === 0);
-
-  // UI Helpers
-  const getStatusColor = (status: 'pending' | 'approved') => {
-    return status === 'pending' ? 'bg-amber-500' : 'bg-emerald-500';
-  };
+  }));
 
   return (
     <div className="space-y-4">
@@ -423,6 +453,7 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = () => {
             <Button
               onClick={() => {
                 setActiveTab('courses');
+                setRatingFilter('all'); // Reset rating filter when switching tabs
               }}
               variant={activeTab === 'courses' ? "default" : "outline"}
               size="sm"
@@ -438,6 +469,7 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = () => {
             <Button
               onClick={() => {
                 setActiveTab('subjects');
+                setRatingFilter('all'); // Reset rating filter when switching tabs
               }}
               variant={activeTab === 'subjects' ? "default" : "outline"}
               size="sm"
@@ -452,8 +484,79 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = () => {
             </Button>
           </div>
 
-          {/* New Dropdown Filter for Status */}
-          <div className="flex items-center">
+          {/* Enhanced Filter Controls */}
+          <div className="flex items-center gap-2">
+            {/* Rating Filter */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="flex items-center gap-2 h-8">
+                  <Star className="h-3.5 w-3.5" />
+                  {ratingFilter === 'all' ? (
+                    <span>All Ratings</span>
+                  ) : (
+                    <div className="flex items-center">
+                      <span>{ratingFilter}</span>
+                      <Star className="h-3 w-3 ml-1 text-yellow-400 fill-yellow-400" />
+                    </div>
+                  )}
+                  <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem
+                  className={cn(
+                    "flex items-center justify-between px-3 py-2 cursor-pointer",
+                    ratingFilter === 'all' && "bg-blue-50 text-blue-700"
+                  )}
+                  onClick={() => setRatingFilter('all')}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="flex">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className="h-3 w-3 text-gray-300" />
+                      ))}
+                    </div>
+                    <span>All Ratings</span>
+                  </div>
+                  <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">
+                    {currentReviews.filter(r => statusFilter === 'approved' 
+                      ? (r.status === 'approved' || r.is_approved === 1 || r.is_approved === true)
+                      : (r.status === 'pending' || r.is_approved === 0 || r.is_approved === false)
+                    ).length}
+                  </Badge>
+                </DropdownMenuItem>
+                
+                {[5, 4, 3, 2, 1].map((rating) => (
+                  <DropdownMenuItem
+                    key={rating}
+                    className={cn(
+                      "flex items-center justify-between px-3 py-2 cursor-pointer",
+                      ratingFilter === rating && "bg-yellow-50 text-yellow-700"
+                    )}
+                    onClick={() => setRatingFilter(rating)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="flex">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`h-3 w-3 ${
+                              i < rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <span>{rating} Star{rating !== 1 ? 's' : ''}</span>
+                    </div>
+                    <Badge variant="outline" className="bg-yellow-50 text-yellow-600 border-yellow-200">
+                      {ratingDistribution[rating] || 0}
+                    </Badge>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Status Filter */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="flex items-center gap-2 h-8">
@@ -507,6 +610,28 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = () => {
 
       {/* Content Section - Simplified */}
       <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+        {/* Show active filters if any */}
+        {ratingFilter !== 'all' && (
+          <div className="px-4 py-2 bg-blue-50 border-b border-blue-100">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm text-blue-700">
+                <Filter className="h-4 w-4" />
+                <span>Filtered by:</span>
+                <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-200">
+                  {ratingFilter} Star{ratingFilter !== 1 ? 's' : ''}
+                </Badge>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setRatingFilter('all')}
+                className="text-blue-600 hover:text-blue-700 h-6 px-2"
+              >
+                Clear filter
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Reviews Content */}
         {loading ? (
@@ -514,8 +639,7 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = () => {
             <Loader2 className="h-8 w-8 text-primary/70 animate-spin mb-3" />
             <span className="text-gray-600 font-medium">Loading reviews...</span>
           </div>
-        ) : activeTab === 'courses' && ((statusFilter === 'pending' && pendingCourseCount > 0) ||
-          (statusFilter === 'approved' && approvedCourseCount > 0)) ? (
+        ) : activeTab === 'courses' && filteredCourseReviews.length > 0 ? (
           <div className="w-full">
             <Table>
               <TableHeader>
@@ -634,8 +758,7 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = () => {
               </TableBody>
             </Table>
           </div>
-        ) : activeTab === 'subjects' && ((statusFilter === 'pending' && pendingSubjectCount > 0) ||
-          (statusFilter === 'approved' && approvedSubjectCount > 0)) ? (
+        ) : activeTab === 'subjects' && filteredSubjectReviews.length > 0 ? (
           <div className="w-full">
             <Table>
               <TableHeader>
@@ -758,16 +881,27 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = () => {
           <div className="text-center py-12">
             <div className="bg-white p-5 max-w-sm mx-auto rounded-lg shadow-sm border">
               <MessageSquare className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-              <h3 className="text-base font-medium text-gray-700 mb-1.5">No {statusFilter} reviews</h3>
+              <h3 className="text-base font-medium text-gray-700 mb-1.5">
+                No {statusFilter} reviews{ratingFilter !== 'all' ? ` with ${ratingFilter} star${ratingFilter !== 1 ? 's' : ''}` : ''}
+              </h3>
               <p className="text-sm text-gray-500 mb-3">
-                {statusFilter === 'pending'
+                {ratingFilter !== 'all' 
+                  ? `No ${activeTab === 'courses' ? 'course' : 'subject'} reviews found with ${ratingFilter} star rating${ratingFilter !== 1 ? 's' : ''}.`
+                  : statusFilter === 'pending'
                   ? `There are no ${activeTab === 'courses' ? 'course' : 'subject'} reviews waiting for approval.`
                   : `There are no approved ${activeTab === 'courses' ? 'course' : 'subject'} reviews at the moment.`}
               </p>
-              <Button variant="outline" size="sm" onClick={fetchReviews}>
-                <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                Refresh
-              </Button>
+              <div className="flex gap-2 justify-center">
+                {ratingFilter !== 'all' && (
+                  <Button variant="outline" size="sm" onClick={() => setRatingFilter('all')}>
+                    Clear filter
+                  </Button>
+                )}
+                <Button variant="outline" size="sm" onClick={fetchReviews}>
+                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                  Refresh
+                </Button>
+              </div>
             </div>
           </div>
         )}

@@ -27,6 +27,10 @@ const SubjectDetail = () => {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const { course, subjects, loading } = useCourseDetails(id, course_or_subject);
 
+  const [reviewText, setReviewText] = useState("");
+  const [rating, setRating] = useState(0);
+  const [visibleReviews, setVisibleReviews] = useState(3);
+
   // const [course, setCourse] = useState(null);
   // const [subjects, setSubjects] = useState([]);
   const [reviews, setReviews] = useState([]);
@@ -125,6 +129,29 @@ const SubjectDetail = () => {
   const handleStartCourse = () => {
     navigate(`/course/${id}/content`);
   };
+   const handleReviewSubmit = () => {
+  if (!reviewText || rating === 0) {
+    toast("Please fill in all fields.");
+    return;
+  }
+
+  apiClient.post('/subjectreviews', {
+      subject_id: id,
+      user_id: user.user.id,
+      rating,
+      review_description: reviewText
+    })
+    .then(() => {
+      toast("Review submitted successfully!");
+      setReviewText("");
+      setRating(0);
+    })
+    .catch(err => {
+      console.error(err);
+      toast("Failed to submit review.");
+    });
+  };
+
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -409,7 +436,7 @@ const SubjectDetail = () => {
                 </div>
 
                 <div className="space-y-6">
-                  {reviews.length > 0 ? reviews.map((review, i) => (
+                  {reviews.length > 0 ?  reviews.slice(0, visibleReviews).map((review)  => (
                     <div key={review.review_id} className="border-b pb-6">
                       <div className="flex items-center mb-3">
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mr-3">
@@ -444,12 +471,52 @@ const SubjectDetail = () => {
                   )}
                 </div>
 
-                {reviews.length > 3 && (
-                  <div className="mt-6 text-center">
-                    <Button variant="outline">See More Reviews</Button>
+                 {visibleReviews < reviews.length && (
+                  <div className="text-center mt-4">
+                    <Button variant="outline" onClick={() => setVisibleReviews(prev => prev + 3)}>
+                      See More Reviews
+                    </Button>
                   </div>
                 )}
               </div>
+
+               {course.isPurchased && course.expiryDaysLeft!=0 && (
+                <div className="mt-10 bg-white shadow p-6 rounded-md">
+                  <h3 className="text-lg font-semibold mb-4">Write a Review</h3>
+              
+                 <div className="mb-4">
+                <label className="block mb-2 font-medium">Rating</label>
+                <div className="flex items-center space-x-1">
+                  {[1, 2, 3, 4, 5].map((num) => (
+                    <svg
+                      key={num}
+                      onClick={() => setRating(num)}
+                      className={`w-8 h-8 cursor-pointer transition-colors ${
+                        num <= rating ? 'text-yellow-400' : 'text-gray-300'
+                      }`}
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.957a1 1 0 00.95.69h4.158c.969 0 1.371 1.24.588 1.81l-3.37 2.448a1 1 0 00-.364 1.118l1.287 3.957c.3.921-.755 1.688-1.538 1.118l-3.37-2.448a1 1 0 00-1.175 0l-3.37 2.448c-.783.57-1.838-.197-1.538-1.118l1.287-3.957a1 1 0 00-.364-1.118L2.075 9.384c-.783-.57-.38-1.81.588-1.81h4.158a1 1 0 00.95-.69l1.286-3.957z" />
+                    </svg>
+                  ))}
+                </div>
+              </div>
+              
+                  <div className="mb-4">
+                    <label className="block mb-1 font-medium">Your Review</label>
+                    <textarea
+                      value={reviewText}
+                      onChange={(e) => setReviewText(e.target.value)}
+                      className="w-full p-2 border rounded h-28"
+                      placeholder="Write your thoughts here..."
+                    />
+                  </div>
+              
+                  <Button onClick={handleReviewSubmit}>Submit Review</Button>
+                </div>
+              )}
+              
             </TabsContent>
 
           </Tabs>

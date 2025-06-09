@@ -17,7 +17,7 @@ import { Loader2 } from 'lucide-react';
 
 const CourseDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const course_or_subject="course";
+  const course_or_subject = "course";
 
   const navigate = useNavigate();
   const user = useAuth();
@@ -27,7 +27,10 @@ const CourseDetail = () => {
   const [reviews, setReviews] = useState([]);
   const { course, subjects, loading } = useCourseDetails(id, course_or_subject);
 
-
+  const [reviewText, setReviewText] = useState("");
+  const [rating, setRating] = useState(0);
+  const [visibleReviews, setVisibleReviews] = useState(3);
+  
   useEffect(() => {
     if (!id) return;
 
@@ -41,10 +44,10 @@ const CourseDetail = () => {
       });
   }, [id]);
 
-  console.log(course);
-  console.log(subjects);
+  // console.log(course);
+  // console.log(subjects);
 
-
+  // console.log(reviews);
   useEffect(() => {
     // Scroll to top on page load
     window.scrollTo(0, 0);
@@ -58,16 +61,39 @@ const CourseDetail = () => {
     }
   }, [id, navigate, course]);
 
- 
-  if (loading) return  <div className="flex justify-center items-center min-h-screen">
-  <Loader2 className="h-8 w-8 text-primary animate-spin mr-2" />
-</div>;
+  const handleReviewSubmit = () => {
+    if (!reviewText || rating === 0) {
+      toast("Please fill in all fields.");
+      return;
+    }
+
+    apiClient.post('/coursereviews', {
+      course_id: id,
+      user_id: user.user.id,
+      rating,
+      review_description: reviewText
+    })
+      .then(() => {
+        toast("Review submitted successfully!");
+        setReviewText("");
+        setRating(0);
+      })
+      .catch(err => {
+        console.error(err);
+        toast("Failed to submit review.");
+      });
+  };
+
+
+  if (loading) return <div className="flex justify-center items-center min-h-screen">
+    <Loader2 className="h-8 w-8 text-primary animate-spin mr-2" />
+  </div>;
 
 
   if (!course) return <p>No course found.</p>;
 
   const handlePurchase = () => {
-    if (!user || user===null) {
+    if (!user || user === null) {
       toast("Authentication required", {
         description: "Please sign in or create an account to purchase this course."
       });
@@ -92,6 +118,7 @@ const CourseDetail = () => {
   const handleStartCourse = () => {
     navigate(`/course/${id}/content`);
   };
+  // console.log(user.user.id);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -168,16 +195,16 @@ const CourseDetail = () => {
                 </div>
 
                 <div className="mb-4">
-                  {course.expiryDaysLeft==0 &&(
+                  {course.expiryDaysLeft == 0 && (
                     <>
-                     <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
-                      <div className="flex items-center text-red-800">
-                        <span className="font-medium">Course Access has been Expired</span>
+                      <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
+                        <div className="flex items-center text-red-800">
+                          <span className="font-medium">Course Access has been Expired</span>
+                        </div>
                       </div>
-                    </div>
                     </>
                   )}
-                  {course.isPurchased && course.expiryDaysLeft!=0 ? (
+                  {course.isPurchased && course.expiryDaysLeft != 0 ? (
                     <div className="bg-green-50 border border-green-200 rounded-md p-3 mb-4">
                       <div className="flex items-center text-green-800">
                         <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -208,16 +235,16 @@ const CourseDetail = () => {
                     </div>
                   )}
 
-                  {course.isPurchased && course.expiryDaysLeft!=0  ? (
+                  {course.isPurchased && course.expiryDaysLeft != 0 ? (
                     <Button onClick={handleStartCourse}
-                    className="w-full bg-primary text-white hover:bg-primary/90 mb-2"
+                      className="w-full bg-primary text-white hover:bg-primary/90 mb-2"
                       size="lg"
                     >
                       Start Course
                     </Button>
                   ) : (
                     <Button onClick={handlePurchase}
-                    className="w-full bg-primary text-white hover:bg-primary/90 mb-2"
+                      className="w-full bg-primary text-white hover:bg-primary/90 mb-2"
                       size="lg"
                     >
                       Buy Now - ₹{course?.price}
@@ -321,7 +348,7 @@ const CourseDetail = () => {
                     ))}
                   </Accordion>
                 ) : (
-                    <h3 className="text-lg font-medium mb-2">No subjects found</h3>
+                  <h3 className="text-lg font-medium mb-2">No subjects found</h3>
                 )}
 
               </div>
@@ -381,7 +408,7 @@ const CourseDetail = () => {
                 </div>
 
                 <div className="space-y-6">
-                  {reviews.length > 0 ? reviews.map((review, i) => (
+                  {reviews.length > 0 ? reviews.slice(0, visibleReviews).map((review) => (
                     <div key={review.review_id} className="border-b pb-6">
                       <div className="flex items-center mb-3">
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mr-3">
@@ -416,15 +443,54 @@ const CourseDetail = () => {
                   )}
                 </div>
 
-                {reviews.length > 3 && (
-                  <div className="mt-6 text-center">
-                    <Button variant="outline">See More Reviews</Button>
+                {visibleReviews < reviews.length && (
+                  <div className="text-center mt-4">
+                    <Button variant="outline" onClick={() => setVisibleReviews(prev => prev + 3)}>
+                      See More Reviews
+                    </Button>
                   </div>
                 )}
               </div>
+              {course.isPurchased && course.expiryDaysLeft != 0 && (
+                <div className="mt-10 bg-white shadow p-6 rounded-md">
+                  <h3 className="text-lg font-semibold mb-4">Write a Review</h3>
+
+                  <div className="mb-4">
+                    <label className="block mb-2 font-medium">Rating</label>
+                    <div className="flex items-center space-x-1">
+                      {[1, 2, 3, 4, 5].map((num) => (
+                        <svg
+                          key={num}
+                          onClick={() => setRating(num)}
+                          className={`w-8 h-8 cursor-pointer transition-colors ${num <= rating ? 'text-yellow-400' : 'text-gray-300'
+                            }`}
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.957a1 1 0 00.95.69h4.158c.969 0 1.371 1.24.588 1.81l-3.37 2.448a1 1 0 00-.364 1.118l1.287 3.957c.3.921-.755 1.688-1.538 1.118l-3.37-2.448a1 1 0 00-1.175 0l-3.37 2.448c-.783.57-1.838-.197-1.538-1.118l1.287-3.957a1 1 0 00-.364-1.118L2.075 9.384c-.783-.57-.38-1.81.588-1.81h4.158a1 1 0 00.95-.69l1.286-3.957z" />
+                        </svg>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block mb-1 font-medium">Your Review</label>
+                    <textarea
+                      value={reviewText}
+                      onChange={(e) => setReviewText(e.target.value)}
+                      className="w-full p-2 border rounded h-28"
+                      placeholder="Write your thoughts here..."
+                    />
+                  </div>
+
+                  <Button onClick={handleReviewSubmit}>Submit Review</Button>
+                </div>
+              )}
+
             </TabsContent>
 
           </Tabs>
+
         </div>
       </main>
 

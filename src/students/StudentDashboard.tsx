@@ -55,10 +55,10 @@ const StudentDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gray-100 flex flex-col md:flex-row">
+    <div className="h-screen w-full bg-gray-100 flex flex-col md:flex-row overflow-hidden">
       {/* Mobile Header with Menu Toggle and Back Button - Only on mobile */}
       {isMobile && (
-        <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-white z-20">
+        <div className="flex items-center justify-between p-4 border-b flex-shrink-0 bg-white z-20">
           <div className="flex items-center">
             <button
               onClick={toggleMobileMenu}
@@ -92,7 +92,7 @@ const StudentDashboard: React.FC = () => {
 
       {/* Desktop Sidebar - Only on desktop */}
       {!isMobile && (
-        <div className="w-auto">
+        <div className="w-auto flex-shrink-0">
           <StudentSidebar
             activeSection={activeSection}
             setActiveSection={setActiveSection}
@@ -102,17 +102,19 @@ const StudentDashboard: React.FC = () => {
         </div>
       )}
 
-
       {/* Main Content */}
-      <div className="flex-1 ">
-        <button
-          onClick={handleGoBack}
-          className="p-2 hover:bg-gray-100 rounded-md flex items-center text-gray-700"
-        >
-          <ArrowLeft className="h-5 w-5 mr-2" />
-          <span>Back</span>
-        </button>
-        <div className={`p-6 ${!isMobile ? 'mt-4' : ''}`}>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-shrink-0 p-4 bg-white border-b">
+          <button
+            onClick={handleGoBack}
+            className="flex items-center text-gray-700 hover:text-gray-900 transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5 mr-2" />
+            <span>Back</span>
+          </button>
+        </div>
+        
+        <div className="flex-1 overflow-hidden">
           {/* Profile - Default View */}
           {activeSection === "profile" && (
             <Profile />

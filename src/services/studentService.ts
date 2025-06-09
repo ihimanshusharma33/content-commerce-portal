@@ -108,7 +108,7 @@ export const getStudentReviews = async () => {
   try {
     const headers = getAuthHeaders();
     const response = await apiClient.get('/student/my-reviews', { headers });
-    if (response.data && response.data.status === 'success') {
+    if (response.data && response.data.status) {
       return response.data.data;
     }
     return { course_reviews: [], subject_reviews: [] };

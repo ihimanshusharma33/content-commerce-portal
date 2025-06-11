@@ -8,26 +8,10 @@ const StudentReviews = () => {
   const [subjectReviews, setSubjectReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-<<<<<<< HEAD
-interface StudentReviewsProps {
-  reviews: Review[];
-}
-
-const StudentReviews = ({ reviews }: StudentReviewsProps) => {
-  const navigate = useNavigate();
-
-  
-  
-  return (
-    <>
-      <div className="bg-white rounded-lg shadow p-4 sm:p-6 mb-4 sm:mb-6">
-        <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">My Course Reviews</h2>
-=======
   useEffect(() => {
     const fetchReviews = async () => {
       try {
         const response = await getStudentReviews();
->>>>>>> c1199260da327c686b11bbf9d425841940d41811
         
         if (response.data) {
           setCourseReviews(response.data.course_reviews || []);

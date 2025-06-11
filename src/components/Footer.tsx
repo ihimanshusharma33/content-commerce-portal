@@ -12,7 +12,7 @@ const Footer = () => {
           {/* Brand Section */}
           <div className="lg:col-span-1">
             <Link to="/" className="flex items-center space-x-2 mb-4">
-              <img src="./assests/images/Logo1.png" alt="Logo" className="h-10 w-10" />
+              <img src="/assests/images/Logo1.png" alt="Logo" className="h-10 w-10" />
               <span className="text-xl font-bold text-primary">Amplifilearn</span>
             </Link>
             <p className="text-muted-foreground mb-4 leading-relaxed">

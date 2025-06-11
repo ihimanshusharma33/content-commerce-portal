@@ -14,6 +14,7 @@ import apiClient from '@/utils/apiClient';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCourseDetails } from '@/hooks/useCourseDetails';
 import { Loader2 } from 'lucide-react';
+import { getAssetUrl } from '@/services/apiService';
 
 const CourseDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -30,7 +31,7 @@ const CourseDetail = () => {
   const [reviewText, setReviewText] = useState("");
   const [rating, setRating] = useState(0);
   const [visibleReviews, setVisibleReviews] = useState(3);
-  
+  console.log(course);
   useEffect(() => {
     if (!id) return;
 
@@ -116,7 +117,7 @@ const CourseDetail = () => {
   };
 
   const handleStartCourse = () => {
-    navigate(`/course/${id}/content`);
+    navigate(`/chapter/${id}/content`);
   };
   // console.log(user.user.id);
 
@@ -187,11 +188,12 @@ const CourseDetail = () => {
             <div className="lg:w-1/3">
               <Card className="p-4 sticky top-24">
                 <div className="aspect-video w-full rounded-lg overflow-hidden mb-4">
-                  <img
-                    src={course?.image}
-                    alt={course?.name}
-                    className="w-full h-full object-cover"
-                  />
+                   <img
+                                            src={getAssetUrl(course.image)}
+                                            alt={course.name}
+                                            className="h-full w-full object-fit transition-transform hover:scale-105 duration-300"
+                                          />
+            
                 </div>
 
                 <div className="mb-4">
@@ -319,7 +321,7 @@ const CourseDetail = () => {
                           <div className="p-4 space-y-4">
                             <div className="flex items-center gap-4">
                               <img
-                                src={subject.image}
+                                src={getAssetUrl(subject.image)}
                                 alt={subject.name}
                                 className="w-16 h-16 object-cover rounded"
                               />
@@ -412,10 +414,10 @@ const CourseDetail = () => {
                     <div key={review.review_id} className="border-b pb-6">
                       <div className="flex items-center mb-3">
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mr-3">
-                          <span className="font-medium text-primary">{`U${review.user_id}`}</span>
-                        </div>
+                         <span className="font-medium text-primary">{`${String(review.user.name).charAt(0).toUpperCase()}`}
+</span>  </div>
                         <div>
-                          <h4 className="font-medium">User {review.user_id}</h4>
+                          <h4 className="font-medium"> {review.user.name}</h4>
                           <div className="flex items-center">
                             <div className="flex">
                               {[...Array(5)].map((_, j) => (

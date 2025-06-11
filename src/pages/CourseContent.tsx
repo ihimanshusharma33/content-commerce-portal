@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { courses, isAuthenticated, getCurrentUser } from '@/lib/data';
+import { courses, getCurrentUser } from '@/lib/data';
 import { Lesson } from '@/lib/data';
 import { X, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import PDFViewerModal from '@/components/PDFViewerModal';
+import { useAuth } from '@/contexts/AuthContext';
+import { isAuthenticated } from '@/services/authService';
 
 const CourseContent = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,14 +22,14 @@ const CourseContent = () => {
   // This path should point to your actual PDF file
   const pdfUrl = "/assests/pdf/Chapter.pdf";
 
-  const user = getCurrentUser();
+  const user = useAuth();
   const course = courses.find(c => c.id === id);
-  const isPurchased = user?.purchasedCourses.includes(id || '');
+  const isPurchased =true;
 
   useEffect(() => {
     // Redirect to login if not authenticated
     if (!isAuthenticated()) {
-      navigate('/signin', { state: { redirectTo: `/course/${id}/content` } });
+      navigate('/signin', { state: { redirectTo: `/chapter/${id}/content` } });
       return;
     }
 

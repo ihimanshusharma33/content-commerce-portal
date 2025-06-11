@@ -14,14 +14,15 @@ import apiClient from '@/utils/apiClient';
 import { useCourseDetails } from '@/hooks/useCourseDetails';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
+import { getAssetUrl } from '@/services/apiService';
 
 const SubjectDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const course_or_subject="subject";
+  const course_or_subject = "subject";
   const navigate = useNavigate();
   // const user = getCurrentUser();
   const user = useAuth();
-  const isPurchased = false;
+  // const isPurchased = false;
 
   const [activeTab, setActiveTab] = useState('overview');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -97,10 +98,10 @@ const SubjectDetail = () => {
     }
   }, [id, navigate, course]);
 
-    if (loading) return  <div className="flex justify-center items-center min-h-screen">
-  <Loader2 className="h-8 w-8 text-primary animate-spin mr-2" />
-</div>
-;
+  if (loading) return <div className="flex justify-center items-center min-h-screen">
+    <Loader2 className="h-8 w-8 text-primary animate-spin mr-2" />
+  </div>
+    ;
   if (!course) return <p>No course found.</p>;
 
   const handlePurchase = () => {
@@ -127,31 +128,30 @@ const SubjectDetail = () => {
   };
 
   const handleStartCourse = () => {
-    navigate(`/course/${id}/content`);
+    navigate(`/chapter/${id}/content`);
   };
-   const handleReviewSubmit = () => {
-  if (!reviewText || rating === 0) {
-    toast("Please fill in all fields.");
-    return;
-  }
+  const handleReviewSubmit = () => {
+    if (!reviewText || rating === 0) {
+      toast("Please fill in all fields.");
+      return;
+    }
 
-  apiClient.post('/subjectreviews', {
+    apiClient.post('/subjectreviews', {
       subject_id: id,
       user_id: user.user.id,
       rating,
       review_description: reviewText
     })
-    .then(() => {
-      toast("Review submitted successfully!");
-      setReviewText("");
-      setRating(0);
-    })
-    .catch(err => {
-      console.error(err);
-      toast("Failed to submit review.");
-    });
+      .then(() => {
+        toast("Review submitted successfully!");
+        setReviewText("");
+        setRating(0);
+      })
+      .catch(err => {
+        console.error(err);
+        toast("Failed to submit review.");
+      });
   };
-
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -221,21 +221,21 @@ const SubjectDetail = () => {
               <Card className="p-4 sticky top-24">
                 <div className="aspect-video w-full rounded-lg overflow-hidden mb-4">
                   <img
-                    src={course?.image}
-                    alt={course?.name}
-                    className="w-full h-full object-cover"
+                    src={getAssetUrl(course.image)}
+                    alt={course.name}
+                    className="h-full w-full object-fit transition-transform hover:scale-105 duration-300"
                   />
                 </div>
 
                 <div className="mb-4">
-                  { course.expiryDaysLeft==0 &&  (
+                  {course.expiryDaysLeft == 0 && (
                     <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
                       <div className="flex items-center text-red-800">
                         <span className="font-medium">Subject Access Expired</span>
                       </div>
                     </div>
-                  ) }
-                  {course.isPurchased && course.expiryDaysLeft!=0 ? (
+                  )}
+                  {course.isPurchased && course.expiryDaysLeft != 0 ? (
                     <div className="bg-green-50 border border-green-200 rounded-md p-3 mb-4">
                       <div className="flex items-center text-green-800">
                         <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -266,16 +266,16 @@ const SubjectDetail = () => {
                     </div>
                   )}
 
-                 {course.isPurchased && course.expiryDaysLeft!=0  ? (
+                  {course.isPurchased && course.expiryDaysLeft != 0 ? (
                     <Button onClick={handleStartCourse}
-                    className="w-full bg-primary text-white hover:bg-primary/90 mb-2"
+                      className="w-full bg-primary text-white hover:bg-primary/90 mb-2"
                       size="lg"
                     >
                       Start Course
                     </Button>
                   ) : (
                     <Button onClick={handlePurchase}
-                    className="w-full bg-primary text-white hover:bg-primary/90 mb-2"
+                      className="w-full bg-primary text-white hover:bg-primary/90 mb-2"
                       size="lg"
                     >
                       Buy Now - ₹{course?.price}
@@ -300,8 +300,8 @@ const SubjectDetail = () => {
                     <svg className="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                     </svg>
-                     <span className="text-gray-600">Expires in {course.expiryDaysLeft} Days </span>
-                 </div>
+                    <span className="text-gray-600">Expires in {course.expiryDaysLeft} Days </span>
+                  </div>
                 </div>
               </Card>
             </div>
@@ -349,7 +349,7 @@ const SubjectDetail = () => {
                           <div className="p-4 space-y-4">
                             <div className="flex items-center gap-4">
                               <img
-                                src={subject.image}
+                                src={getAssetUrl(subject.image)}
                                 alt={subject.name}
                                 className="w-16 h-16 object-cover rounded"
                               />
@@ -361,12 +361,13 @@ const SubjectDetail = () => {
                                 </div>
 
                                 <Button
-                                  onClick={() => navigate(`/chapter/${subject.id}`)}
+                                  onClick={() => navigate(`/chapter/${subject.id}/content`)}
                                   className="mt-2 md:mt-0"
-                                  disabled
+                                  disabled={!(course.isPurchased && course.expiryDaysLeft !== 0)}
                                 >
                                   Go to Chapter
                                 </Button>
+
                               </div>
                             </div>
                           </div>
@@ -376,7 +377,7 @@ const SubjectDetail = () => {
                     ))}
                   </Accordion>
                 ) : (
-                    <h3 className="text-lg font-medium mb-2">No Chapters found</h3>
+                  <h3 className="text-lg font-medium mb-2">No Chapters found</h3>
                 )}
 
               </div>
@@ -436,14 +437,15 @@ const SubjectDetail = () => {
                 </div>
 
                 <div className="space-y-6">
-                  {reviews.length > 0 ?  reviews.slice(0, visibleReviews).map((review)  => (
+                  {reviews.length > 0 ? reviews.slice(0, visibleReviews).map((review) => (
                     <div key={review.review_id} className="border-b pb-6">
                       <div className="flex items-center mb-3">
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mr-3">
-                          <span className="font-medium text-primary">{`U${review.user_id}`}</span>
+                          <span className="font-medium text-primary">{`${String(review.user.name).charAt(0).toUpperCase()}`}
+                          </span>
                         </div>
                         <div>
-                          <h4 className="font-medium">User {review.user_id}</h4>
+                          <h4 className="font-medium"> {review.user.name}</h4>
                           <div className="flex items-center">
                             <div className="flex">
                               {[...Array(5)].map((_, j) => (
@@ -471,7 +473,7 @@ const SubjectDetail = () => {
                   )}
                 </div>
 
-                 {visibleReviews < reviews.length && (
+                {visibleReviews < reviews.length && (
                   <div className="text-center mt-4">
                     <Button variant="outline" onClick={() => setVisibleReviews(prev => prev + 3)}>
                       See More Reviews
@@ -480,29 +482,28 @@ const SubjectDetail = () => {
                 )}
               </div>
 
-               {course.isPurchased && course.expiryDaysLeft!=0 && (
+              {course.isPurchased && course.expiryDaysLeft != 0 && (
                 <div className="mt-10 bg-white shadow p-6 rounded-md">
                   <h3 className="text-lg font-semibold mb-4">Write a Review</h3>
-              
-                 <div className="mb-4">
-                <label className="block mb-2 font-medium">Rating</label>
-                <div className="flex items-center space-x-1">
-                  {[1, 2, 3, 4, 5].map((num) => (
-                    <svg
-                      key={num}
-                      onClick={() => setRating(num)}
-                      className={`w-8 h-8 cursor-pointer transition-colors ${
-                        num <= rating ? 'text-yellow-400' : 'text-gray-300'
-                      }`}
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.957a1 1 0 00.95.69h4.158c.969 0 1.371 1.24.588 1.81l-3.37 2.448a1 1 0 00-.364 1.118l1.287 3.957c.3.921-.755 1.688-1.538 1.118l-3.37-2.448a1 1 0 00-1.175 0l-3.37 2.448c-.783.57-1.838-.197-1.538-1.118l1.287-3.957a1 1 0 00-.364-1.118L2.075 9.384c-.783-.57-.38-1.81.588-1.81h4.158a1 1 0 00.95-.69l1.286-3.957z" />
-                    </svg>
-                  ))}
-                </div>
-              </div>
-              
+
+                  <div className="mb-4">
+                    <label className="block mb-2 font-medium">Rating</label>
+                    <div className="flex items-center space-x-1">
+                      {[1, 2, 3, 4, 5].map((num) => (
+                        <svg
+                          key={num}
+                          onClick={() => setRating(num)}
+                          className={`w-8 h-8 cursor-pointer transition-colors ${num <= rating ? 'text-yellow-400' : 'text-gray-300'
+                            }`}
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.957a1 1 0 00.95.69h4.158c.969 0 1.371 1.24.588 1.81l-3.37 2.448a1 1 0 00-.364 1.118l1.287 3.957c.3.921-.755 1.688-1.538 1.118l-3.37-2.448a1 1 0 00-1.175 0l-3.37 2.448c-.783.57-1.838-.197-1.538-1.118l1.287-3.957a1 1 0 00-.364-1.118L2.075 9.384c-.783-.57-.38-1.81.588-1.81h4.158a1 1 0 00.95-.69l1.286-3.957z" />
+                        </svg>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="mb-4">
                     <label className="block mb-1 font-medium">Your Review</label>
                     <textarea
@@ -512,11 +513,11 @@ const SubjectDetail = () => {
                       placeholder="Write your thoughts here..."
                     />
                   </div>
-              
+
                   <Button onClick={handleReviewSubmit}>Submit Review</Button>
                 </div>
               )}
-              
+
             </TabsContent>
 
           </Tabs>

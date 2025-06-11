@@ -36,7 +36,7 @@ const Navbar = () => {
     <nav className="bg-white shadow-sm py-4 sticky top-0 z-50 border-b">
       <div className="container-custom flex items-center justify-between">
         <Link to="/" className="flex items-center space-x-2">
-          <img src="./assests/images/Logo1.png" alt="Logo" className="h-12 w-12 p-0 m-0" />
+          <img src="/assests/images/Logo1.png" alt="Logo" className="h-12 w-12 p-0 m-0" />
           <span className="text-xl font-bold text-primary">Amplifilearn</span>
         </Link>
 

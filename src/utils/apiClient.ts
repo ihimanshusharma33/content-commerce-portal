@@ -1,7 +1,5 @@
 import axios from "axios";
 import { clearAuth } from "../services/authService";
-import { useNavigate } from "react-router-dom";
-const navigate = useNavigate();
 
 // Create an Axios instance
 const apiClient = axios.create({
@@ -14,14 +12,10 @@ const apiClient = axios.create({
 // Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
-<<<<<<< HEAD
-    const token = localStorage.getItem("authToken"); // Replace with your token logic
-=======
     // Get the token from localStorage for each request
     const token = localStorage.getItem('auth_token');
     
     // If token exists, add it to the Authorization header
->>>>>>> c1199260da327c686b11bbf9d425841940d41811
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -35,11 +29,8 @@ apiClient.interceptors.request.use(
     return config;
   },
   (error) => {
-<<<<<<< HEAD
-=======
     // Handle request errors
     console.error('Request interceptor error:', error);
->>>>>>> c1199260da327c686b11bbf9d425841940d41811
     return Promise.reject(error);
   }
 );
@@ -52,7 +43,7 @@ apiClient.interceptors.response.use(
       console.log("Authentication error detected");
 
       clearAuth();
-      navigate("/signin");
+      window.location.href = "/signin";
     }
 
     // Handle errors globally

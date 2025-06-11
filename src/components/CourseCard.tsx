@@ -2,6 +2,7 @@
 import { Link } from 'react-router-dom';
 import { Course } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
+import { getAssetUrl } from '@/services/apiService';
 
 interface CourseCardProps {
   course: Course;
@@ -16,11 +17,12 @@ const CourseCard = ({ course, isPurchased = false, course_or_subject, isExpired=
     <Link to={`/${course_or_subject}/${course.id}`} className="block">
       <div className="bg-white rounded-lg overflow-hidden border shadow-sm card-hover h-full">
         <div className="relative">
-          <img
-            src={course.image}
+        
+           <img
+            src={getAssetUrl(course.image)}                  
             alt={course.title}
             className="w-full h-48 object-cover"
-          />
+                            />
 
           {/* Labels */}
           <div className="absolute top-3 left-3 flex flex-wrap gap-1">

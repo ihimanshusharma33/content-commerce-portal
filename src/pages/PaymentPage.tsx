@@ -79,9 +79,8 @@ const PaymentPage = () => {
       const response = await apiClient.post('/phonepe-initiate', {
         course_or_subject_id: course.id,
         payment_type: courseOrSubject, 
-        amount: course.price,
+        amount: course.discountPrice,
       });
-
       const { redirect_url } = response.data.data;
 
       if (redirect_url) {

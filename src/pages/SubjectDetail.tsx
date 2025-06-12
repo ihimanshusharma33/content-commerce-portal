@@ -250,19 +250,23 @@ const SubjectDetail = () => {
                         <span className="text-2xl font-bold">
                           ${(course?.discountPrice || course?.price)}
                         </span>
-                        {course?.discountPrice && (
+                        {course?.discountPrice ? (
                           <span className="text-gray-500 line-through">
                             ${course?.price}
                           </span>
+                        ):(
+                          <></>
                         )}
                       </div>
-                      {course?.discountPrice && (
+                      {course?.discountPrice ? (
                         <div className="flex items-center mb-2 text-green-700">
                           <span className="font-medium">
                             {Math.round((1 - course?.discountPrice / course?.price) * 100)}% off
                           </span>
                         </div>
-                      )}
+                      ):(
+                      <>
+                      </>)}
                     </div>
                   )}
 

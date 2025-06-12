@@ -79,7 +79,7 @@ const PaymentPage = () => {
       const response = await apiClient.post('/phonepe-initiate', {
         course_or_subject_id: course.id,
         payment_type: courseOrSubject, 
-        amount: course.discountPrice,
+        amount: course.discountPrice > 0 ? course.discountPrice : course.price
       });
       const { redirect_url } = response.data.data;
 
@@ -168,7 +168,14 @@ const PaymentPage = () => {
                     {showDiscount && (
                       <div className="flex justify-between mb-2 text-green-600 text-base">
                         <span>Discount</span>
-                        <span>-${(course.price - course?.discountPrice!)}</span>
+                        {course.discountPrice==0?(
+                        <span>-${( course.discountPrice!)}</span>
+                        ):(
+                          <>
+                        <span>-${(course.price - course.discountPrice!)}</span>
+                          
+                          </>
+                        )}
                       </div>
                     )}
 

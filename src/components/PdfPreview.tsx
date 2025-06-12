@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
-import '../styles/pdf-viewer.css'; // Fixed import path
+import '../styles/pdf-viewer.css'; 
 
 const PDFViewer = ({ pdfUrl }) => {
   const containerRef = useRef<HTMLDivElement>(null);

@@ -117,7 +117,7 @@ const CourseDetail = () => {
   };
 
   const handleStartCourse = () => {
-    navigate(`/chapter/${id}/content`);
+    navigate(`/course/${id}/subjects`);
   };
   // console.log(user.user.id);
 
@@ -130,7 +130,7 @@ const CourseDetail = () => {
         <PaymentModal
           isOpen={isPaymentModalOpen}
           onClose={() => setIsPaymentModalOpen(false)}
-          course={courses}
+          course={course}
           onPaymentComplete={handlePaymentComplete}
         />
       )}

@@ -4,8 +4,8 @@ import { Button } from './ui/button';
 import * as pdfjsLib from 'pdfjs-dist';
 import '../styles/pdf-modal.css';
 
-// Set PDF worker path
-pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.js';
+// Set PDF worker path to use your local worker file
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/src/webWorker/pdfWorker.js';
 
 interface PDFViewerModalProps {
   isOpen: boolean;
@@ -24,8 +24,6 @@ const PDFViewerModal: React.FC<PDFViewerModalProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const initialPinchDistance = useRef<number>(0);
-  const startScale = useRef<number>(1);
 
   // Handle screen size changes
   useEffect(() => {
@@ -37,17 +35,14 @@ const PDFViewerModal: React.FC<PDFViewerModalProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Listen for custom scale update events (from pinch gesture)
+  // Set initial scale based on device
   useEffect(() => {
-    const handleScaleUpdate = (e: CustomEvent) => {
-      setScale(e.detail.scale);
-    };
-
-    document.addEventListener('pdfUpdateScale', handleScaleUpdate as EventListener);
-    return () => {
-      document.removeEventListener('pdfUpdateScale', handleScaleUpdate as EventListener);
-    };
-  }, []);
+    if (isOpen) {
+      setScale(isMobile ? 0.8 : 1.2);
+      setError(null);
+      setIsLoading(true);
+    }
+  }, [isOpen, isMobile]);
 
   const handleZoomIn = () => {
     setScale(prev => Math.min(5, prev + 0.25));
@@ -57,71 +52,94 @@ const PDFViewerModal: React.FC<PDFViewerModalProps> = ({
     setScale(prev => Math.max(0.5, prev - 0.25));
   };
 
+  // Close modal on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
     <div className="pdf-modal">
-      {/* Header - Desktop only */}
-      <div className="hidden lg:block pdf-modal-header">
-        <h2 className="text-xl font-semibold truncate">{title}</h2>
-
-        <div className="pdf-controls">
-          <Button variant="outline" size="icon" onClick={handleZoomOut} title="Zoom out">
-            <ZoomOut className="h-4 w-4" />
-          </Button>
-          <span className="pdf-zoom-level">{Math.round(scale * 100)}%</span>
-          <Button variant="outline" size="icon" onClick={handleZoomIn} title="Zoom in">
-            <ZoomIn className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={onClose} title="Close">
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
-      </div>
-
-     
-
-      {/* PDF Content */}
-      <div className="pdf-modal-content">
-        <SimplePDFViewer
-          pdfUrl={pdfUrl}
-          scale={scale}
-          onLoadingChange={setIsLoading}
-          onError={setError}
-          isMobile={isMobile}
-          setScale={setScale}
-        />
-      </div>
-
-      {/* Loading indicator */}
-      {isLoading && (
-        <div className="pdf-loading">
-          <div className="pdf-spinner"></div>
-        </div>
-      )}
-
-      {/* Error message */}
-      {error && !isLoading && (
-        <div className="pdf-error">
-          <p>Failed to load PDF: {error}</p>
-        </div>
-      )}
+      <div className="pdf-modal-backdrop" onClick={onClose}></div>
       
-      {/* Always visible close button for mobile */}
-      {isMobile && (
-        <button
-          onClick={onClose}
-          className="pdf-close-button"
-          aria-label="Close PDF viewer"
-        >
-          <X className="h-5 w-5 text-gray-800" />
-        </button>
-      )}
+      <div className="pdf-modal-container">
+        {/* Header */}
+        <div className="pdf-modal-header">
+          <h2 className="text-xl font-semibold truncate">{title}</h2>
+
+          <div className="pdf-controls">
+            {!isMobile && (
+              <>
+                <Button variant="outline" size="icon" onClick={handleZoomOut} title="Zoom out">
+                  <ZoomOut className="h-4 w-4" />
+                </Button>
+                <span className="pdf-zoom-level">{Math.round(scale * 100)}%</span>
+                <Button variant="outline" size="icon" onClick={handleZoomIn} title="Zoom in">
+                  <ZoomIn className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+            <Button variant="ghost" size="icon" onClick={onClose} title="Close">
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+
+        {/* PDF Content */}
+        <div className="pdf-modal-content">
+          {pdfUrl && isOpen && (
+            <SimplePDFViewer
+              pdfUrl={pdfUrl}
+              scale={scale}
+              onLoadingChange={setIsLoading}
+              onError={setError}
+              isMobile={isMobile}
+              setScale={setScale}
+            />
+          )}
+        </div>
+
+        {/* Loading indicator */}
+        {isLoading && (
+          <div className="pdf-loading">
+            <div className="pdf-spinner"></div>
+            <p>Loading PDF...</p>
+          </div>
+        )}
+
+        {/* Error message */}
+        {error && !isLoading && (
+          <div className="pdf-error">
+            <p>Failed to load PDF: {error}</p>
+            <Button onClick={() => {
+              setError(null);
+              setIsLoading(true);
+            }}>
+              Retry
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
-// Update the SimplePDFViewer component props interface
+// Updated SimplePDFViewer component
 interface SimplePDFViewerProps {
   pdfUrl: string;
   scale: number;
@@ -141,108 +159,152 @@ const SimplePDFViewer: React.FC<SimplePDFViewerProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const pdfDocRef = useRef<any>(null);
-  const initialPinchDistance = useRef<number>(0);
-  const initialScale = useRef<number>(scale);
-  let lastTapTime = 0;
+  const [totalPages, setTotalPages] = useState(0);
 
-  // Load PDF document only once
+  // Load PDF document
   useEffect(() => {
+    if (!pdfUrl) {
+      onError('No PDF URL provided');
+      onLoadingChange(false);
+      return;
+    }
+
     const loadPdf = async () => {
       try {
         onLoadingChange(true);
+        onError(null);
 
-        // Load PDF document
-        const pdf = await pdfjsLib.getDocument({
+        console.log('Loading PDF from:', pdfUrl);
+        console.log('Using worker:', pdfjsLib.GlobalWorkerOptions.workerSrc);
+
+        // Create loading task with better configuration
+        const loadingTask = pdfjsLib.getDocument({
           url: pdfUrl,
-          withCredentials: true
-        }).promise;
+          httpHeaders: {
+            'Accept': 'application/pdf',
+            'Cache-Control': 'no-cache'
+          },
+          withCredentials: false,
+          isEvalSupported: false,
+          maxImageSize: 1024 * 1024, // 1MB max image size
+          disableFontFace: false,
+          disableRange: false,
+          disableStream: false
+        });
+
+        const pdf = await loadingTask.promise;
+        console.log('PDF loaded successfully, pages:', pdf.numPages);
 
         pdfDocRef.current = pdf;
-        renderPages(pdf);
+        setTotalPages(pdf.numPages);
+        
+        // Start rendering pages
+        await renderAllPages(pdf);
+        
       } catch (err) {
         console.error('Failed to load PDF:', err);
-        onError('Failed to load PDF document');
+        onError(`Failed to load PDF: ${err.message || 'Unknown error'}`);
         onLoadingChange(false);
       }
     };
 
-    if (pdfUrl) loadPdf();
+    loadPdf();
+
+    // Cleanup function
+    return () => {
+      if (pdfDocRef.current) {
+        pdfDocRef.current.destroy();
+        pdfDocRef.current = null;
+      }
+    };
   }, [pdfUrl, onError, onLoadingChange]);
 
   // Re-render when scale changes
   useEffect(() => {
-    if (pdfDocRef.current) {
-      renderPages(pdfDocRef.current);
+    if (pdfDocRef.current && totalPages > 0) {
+      renderAllPages(pdfDocRef.current);
     }
-  }, [scale]);
+  }, [scale, totalPages]);
 
-  // Main rendering function - IMPROVED FOR CONSISTENT ZOOM
-  const renderPages = async (pdfDoc: any) => {
+  const renderAllPages = async (pdfDoc: any) => {
     if (!containerRef.current || !pdfDoc) return;
 
     try {
       // Clear container
       containerRef.current.innerHTML = '';
-      let allPagesRendered = true;
 
-      // Create a single wrapper for all pages to maintain consistent zoom
+      // Create pages container
       const pagesContainer = document.createElement('div');
       pagesContainer.className = 'pdf-pages-wrapper';
       containerRef.current.appendChild(pagesContainer);
 
       // Render each page
-      for (let i = 1; i <= pdfDoc.numPages; i++) {
-        // Create wrapper
-        const pageWrapper = document.createElement('div');
-        pageWrapper.className = 'pdf-page-wrapper';
-        pageWrapper.dataset.pageNumber = i.toString();
-
-        // Create canvas
-        const canvas = document.createElement('canvas');
-        canvas.className = 'pdf-canvas';
-        canvas.setAttribute('data-page', i.toString());
-        pageWrapper.appendChild(canvas);
-
-        // Add watermark
-        const watermark = document.createElement('div');
-        watermark.className = 'pdf-watermark';
-        watermark.textContent = 'Confidential';
-        pageWrapper.appendChild(watermark);
-
-        pagesContainer.appendChild(pageWrapper);
-
+      for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
         try {
-          // Get page and set viewport
-          const page = await pdfDoc.getPage(i);
+          const page = await pdfDoc.getPage(pageNum);
           const viewport = page.getViewport({ scale });
 
-          // Set canvas size
+          // Create page container
+          const pageContainer = document.createElement('div');
+          pageContainer.className = 'pdf-page-container';
+          pageContainer.style.marginBottom = '20px';
+          pageContainer.style.position = 'relative';
+          pageContainer.style.display = 'flex';
+          pageContainer.style.justifyContent = 'center';
+
+          // Create canvas
+          const canvas = document.createElement('canvas');
+          canvas.className = 'pdf-canvas';
           canvas.height = viewport.height;
           canvas.width = viewport.width;
+          canvas.style.maxWidth = '100%';
+          canvas.style.height = 'auto';
+          canvas.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
 
-          // Render to canvas
-          await page.render({
-            canvasContext: canvas.getContext('2d'),
-            viewport
-          }).promise;
+          // Add watermark
+          const watermark = document.createElement('div');
+          watermark.textContent = 'Confidential';
+          watermark.style.position = 'absolute';
+          watermark.style.top = '50%';
+          watermark.style.left = '50%';
+          watermark.style.transform = 'translate(-50%, -50%) rotate(-45deg)';
+          watermark.style.fontSize = `${Math.max(20, scale * 30)}px`;
+          watermark.style.color = 'rgba(255, 0, 0, 0.1)';
+          watermark.style.fontWeight = 'bold';
+          watermark.style.pointerEvents = 'none';
+          watermark.style.userSelect = 'none';
+          watermark.style.zIndex = '10';
 
-        } catch (err) {
-          console.log(`Error rendering page ${i}:`, err);
-          allPagesRendered = false;
+          pageContainer.appendChild(canvas);
+          pageContainer.appendChild(watermark);
+          pagesContainer.appendChild(pageContainer);
+
+          // Render page to canvas
+          const context = canvas.getContext('2d');
+          if (context) {
+            await page.render({
+              canvasContext: context,
+              viewport: viewport
+            }).promise;
+            
+            console.log(`Page ${pageNum} rendered successfully`);
+          }
+
+        } catch (pageError) {
+          console.error(`Error rendering page ${pageNum}:`, pageError);
         }
       }
 
-      // Set loading to false when complete
       onLoadingChange(false);
 
     } catch (err) {
-      console.error('Error rendering PDF:', err);
-      onError('Failed to render PDF');
+      console.error('Error rendering pages:', err);
+      onError('Failed to render PDF pages');
       onLoadingChange(false);
     }
   };
 
-  // REMOVE THE DUPLICATE TOUCH HANDLER - Keep only one improved version
+  // Touch gesture handling for mobile
   useEffect(() => {
     if (!containerRef.current || !isMobile) return;
     
@@ -250,8 +312,7 @@ const SimplePDFViewer: React.FC<SimplePDFViewerProps> = ({
     let isPinching = false;
     let initialDistance = 0;
     let startScale = scale;
-    let lastScale = scale;
-    let throttleTimer: number | null = null;
+    let lastTapTime = 0;
     
     const getDistance = (touches: TouchList): number => {
       const dx = touches[0].clientX - touches[1].clientX;
@@ -264,20 +325,16 @@ const SimplePDFViewer: React.FC<SimplePDFViewerProps> = ({
         isPinching = true;
         initialDistance = getDistance(e.touches);
         startScale = scale;
-        lastScale = scale;
         e.preventDefault();
       } else if (e.touches.length === 1) {
-        // Handle double tap to zoom
-        const now = new Date().getTime();
+        // Double tap detection
+        const now = Date.now();
         const timeSince = now - lastTapTime;
 
-        if (timeSince < 300) {
-          // Double tap detected
-          if (scale > 1) {
-            setScale(1); // Reset zoom
-          } else {
-            setScale(2); // Zoom in
-          }
+        if (timeSince < 300 && timeSince > 0) {
+          // Double tap - toggle zoom
+          const newScale = scale > 1 ? 1 : 2;
+          setScale(newScale);
           e.preventDefault();
         }
         lastTapTime = now;
@@ -287,43 +344,16 @@ const SimplePDFViewer: React.FC<SimplePDFViewerProps> = ({
     const handleTouchMove = (e: TouchEvent) => {
       if (isPinching && e.touches.length === 2) {
         const currentDistance = getDistance(e.touches);
-        const scaleFactor = currentDistance / initialDistance;
+        const scaleMultiplier = currentDistance / initialDistance;
+        const newScale = Math.min(5, Math.max(0.5, startScale * scaleMultiplier));
         
-        // Improved calculation for zoom out to make it more responsive
-        let newScale;
-        if (scaleFactor < 1) {
-          // More gradual zoom out (feels more natural)
-          newScale = Math.max(0.5, startScale - (1 - scaleFactor) * startScale * 0.8);
-        } else {
-          // Regular zoom in calculation
-          newScale = Math.min(5, startScale * scaleFactor);
-        }
-        
-        // Update zoom percentage display immediately for feedback
-        const zoomElement = document.querySelector('.pdf-zoom-level');
-        if (zoomElement) {
-          zoomElement.textContent = `${Math.round(newScale * 100)}%`;
-        }
-        
-        // Throttle actual scale updates to prevent performance issues
-        if (!throttleTimer && Math.abs(newScale - lastScale) > 0.05) {
-          throttleTimer = window.setTimeout(() => {
-            setScale(newScale);
-            lastScale = newScale;
-            throttleTimer = null;
-          }, 16); // ~60fps
-        }
-        
+        setScale(newScale);
         e.preventDefault();
       }
     };
     
     const handleTouchEnd = () => {
       isPinching = false;
-      if (throttleTimer) {
-        clearTimeout(throttleTimer);
-        throttleTimer = null;
-      }
     };
     
     container.addEventListener('touchstart', handleTouchStart, { passive: false });
@@ -331,14 +361,44 @@ const SimplePDFViewer: React.FC<SimplePDFViewerProps> = ({
     container.addEventListener('touchend', handleTouchEnd);
     
     return () => {
-      if (throttleTimer) clearTimeout(throttleTimer);
       container.removeEventListener('touchstart', handleTouchStart);
       container.removeEventListener('touchmove', handleTouchMove);
       container.removeEventListener('touchend', handleTouchEnd);
     };
   }, [scale, setScale, isMobile]);
 
-  return <div ref={containerRef} className="pdf-pages-container" />;
+  // Prevent right-click and text selection
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const container = containerRef.current;
+    
+    const preventContextMenu = (e: Event) => e.preventDefault();
+    const preventSelection = (e: Event) => e.preventDefault();
+    
+    container.addEventListener('contextmenu', preventContextMenu);
+    container.addEventListener('selectstart', preventSelection);
+    container.addEventListener('dragstart', preventSelection);
+
+    return () => {
+      container.removeEventListener('contextmenu', preventContextMenu);
+      container.removeEventListener('selectstart', preventSelection);
+      container.removeEventListener('dragstart', preventSelection);
+    };
+  }, []);
+
+  return (
+    <div 
+      ref={containerRef} 
+      className="pdf-pages-container"
+      style={{
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        msUserSelect: 'none',
+        MozUserSelect: 'none'
+      }}
+    />
+  );
 };
 
 export default PDFViewerModal;

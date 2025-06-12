@@ -51,9 +51,8 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = () => {
   const [processingReviews, setProcessingReviews] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
 
-  // Function to fetch reviews - remains the same
+  // Function to fetch reviews - Update to handle correct API response structure
   const fetchReviews = async () => {
-    // Existing implementation
     setLoading(true);
     setError(null);
 
@@ -61,8 +60,10 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = () => {
       // Fetch course reviews
       let courseData: CourseReview[] = [];
       try {
-        courseData = await getCourseReviews();
-        console.log('Fetched course reviews:', courseData);
+        const courseResponse = await getCourseReviews();
+        console.log('Fetched course reviews:', courseResponse);
+        // Handle both direct array and data wrapper
+        courseData = courseResponse.data || courseResponse || [];
       } catch (error) {
         console.error('Error fetching course reviews:', error);
         toast({
@@ -75,8 +76,10 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = () => {
       // Fetch subject reviews
       let subjectData: SubjectReview[] = [];
       try {
-        subjectData = await getSubjectReviews();
-        console.log('Fetched subject reviews:', subjectData);
+        const subjectResponse = await getSubjectReviews();
+        console.log('Fetched subject reviews:', subjectResponse);
+        // Handle both direct array and data wrapper
+        subjectData = subjectResponse.data || subjectResponse || [];
       } catch (error) {
         console.error('Error fetching subject reviews:', error);
         toast({
@@ -353,9 +356,9 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = () => {
     </div>
   );
 
-  // Enhanced filter reviews by status and rating
+  // Enhanced filter reviews by status and rating - Fix field names
   const filteredCourseReviews = courseReviews.filter(review => {
-    // Status filter
+    // Status filter - use correct field names
     const statusMatch = statusFilter === 'approved' 
       ? (review.status === 'approved' || review.is_approved === 1 || review.is_approved === true)
       : (review.status === 'pending' || review.is_approved === 0 || review.is_approved === false);
@@ -367,7 +370,7 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = () => {
   });
 
   const filteredSubjectReviews = subjectReviews.filter(review => {
-    // Status filter
+    // Status filter - use correct field names
     const statusMatch = statusFilter === 'approved' 
       ? (review.status === 'approved' || review.is_approved === 1 || review.is_approved === true)
       : (review.status === 'pending' || review.is_approved === 0 || review.is_approved === false);
@@ -378,7 +381,7 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = () => {
     return statusMatch && ratingMatch;
   });
 
-  // Enhanced badge counts with rating consideration
+  // Enhanced badge counts with rating consideration - Fix field access
   const pendingCourseCount = courseReviews.filter(r => {
     const isPending = r.status === 'pending' || r.is_approved === 0 || r.is_approved === false;
     const ratingMatch = ratingFilter === 'all' || r.rating === ratingFilter;

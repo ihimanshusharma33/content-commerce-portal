@@ -122,6 +122,7 @@ const mapReviewToApi = (review: Partial<Review>): any => ({
 
 });
 
+
 // Add this mapping function for User objects
 const mapUserFromApi = (userData: any): User => ({
   id: userData.id || userData.user_id,
@@ -509,3 +510,114 @@ export function getAssetUrl(path?: string | null): string | undefined {
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
   return `https://amplifilearn.com/api/storage/app/public/${path.replace(/^\\\\+|^\\\\+/, "")}`;
 }
+
+// Remove the duplicate getCourseById function and keep only this one
+export const getCourseById = (courseId: number): Promise<Course> =>
+  apiClient.get(`/courses/${courseId}`).then((response) => {
+    if (response.data && response.data.status && response.data.data) {
+      const course = response.data.data;
+      return {
+        id: course.course_id || courseId,
+        name: course.course_name,
+        description: course.course_description,
+        semester: course.semester,
+        image: course.image,
+        createdAt: course.created_at,
+        price: course.price,
+        discount: course.discount,
+        subjects: course.subjects || [],
+        averageRating: course.overall_rating,
+        totalReviews: course.total_review_count || 0
+      };
+    }
+    
+    throw new Error(response.data?.message || 'Failed to fetch course details');
+  });
+
+// Add a new function for getting course with subjects
+export interface CourseWithSubjects {
+  id: number;
+  course_name: string;
+  course_description: string;
+  price: string | number;
+  discount: string | number;
+  semester: number;
+  image: string;
+  total_subjects: number;
+  subjects: Subject[];
+  total_users: number;
+  overall_rating: string;
+  total_review_count: number;
+  is_purchased: boolean;
+  expiry_days_left: number;
+  createdAt: string;
+}
+
+export const getCourseWithSubjects = (courseId: number): Promise<CourseWithSubjects> =>
+  apiClient.get(`/courses/${courseId}`).then((response) => {
+    if (response.data && response.data.status && response.data.data) {
+      const course = response.data.data;
+      return {
+        id: courseId,
+        course_name: course.course_name,
+        course_description: course.course_description,
+        price: course.price,
+        discount: course.discount,
+        semester: course.semester,
+        image: course.image,
+        total_subjects: course.total_subjects,
+        subjects: course.subjects || [],
+        total_users: course.total_users,
+        overall_rating: course.overall_rating,
+        total_review_count: course.total_review_count,
+        is_purchased: course.is_purchased,
+        expiry_days_left: course.expiry_days_left,
+        createdAt: course.created_at
+      };
+    }
+    
+    throw new Error(response.data?.message || 'Failed to fetch course details');
+  });
+
+// Add these new functions for subject and chapter operations
+export const getSubjectById = (subjectId: number): Promise<any> =>
+  apiClient.get(`/subjects/${subjectId}`).then((response) => {
+    console.log('Subject details API response:', response.data);
+    
+    if (response.data && response.data.status && response.data.data) {
+      return response.data.data;
+    } else if (response.data) {
+      return response.data;
+    }
+    
+    throw new Error(response.data?.message || 'Failed to fetch subject details');
+  });
+
+export const getSubjectChapters = (subjectId: number): Promise<{ subject: any; chapters: any[] }> =>
+  apiClient.get(`/chapters/subject/${subjectId}`).then((response) => {
+    console.log('Subject chapters API response:', response.data);
+    
+    if (response.data && response.data.status && response.data.data) {
+      return {
+        subject: response.data.data.subject_details,
+        chapters: response.data.data.chapters || []
+      };
+    }
+    
+    console.warn('Unexpected API response structure in getSubjectChapters:', response.data);
+    return { subject: null, chapters: [] };
+  });
+
+// Optional: Add a function to get individual chapter details if needed
+export const getChapterById = (chapterId: number): Promise<any> =>
+  apiClient.get(`/chapters/${chapterId}`).then((response) => {
+    console.log('Chapter details API response:', response.data);
+    
+    if (response.data && response.data.status && response.data.data) {
+      return response.data.data;
+    } else if (response.data) {
+      return response.data;
+    }
+    
+    throw new Error(response.data?.message || 'Failed to fetch chapter details');
+  });

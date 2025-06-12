@@ -8,6 +8,7 @@ import NotFound from "./pages/NotFound";
 import CourseList from "./pages/CourseList";
 import CourseDetail from "./pages/CourseDetail";
 import CourseContent from "./pages/CourseContent";
+import CourseSubjects from "./pages/CourseSubjects"; // Ensure the file './pages/CourseSubjects.tsx' exists and is correctly named.
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import StudentDashboard from "./students/StudentDashboard";
@@ -35,6 +36,8 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/courses" element={<CourseList />} />
             <Route path="/course/:id" element={<CourseDetail />} />
+            <Route path="/course/:courseId/subjects" element={<CourseSubjects />} />
+            <Route path="/subject/:subjectId/content" element={<CourseContent />} />
             <Route path="/chapter/:id/content" element={<CourseContent />} />
             <Route path="/subject/:id" element={<SubjectDetail />} />
             <Route path="/signin" element={<SignIn />} />

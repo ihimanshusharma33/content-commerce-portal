@@ -4,14 +4,15 @@ import { Button } from './ui/button';
 import * as pdfjsLib from 'pdfjs-dist';
 import '../styles/pdf-modal.css';
 
-// Use PDF.js from node_modules
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.js',
-  import.meta.url
-).toString();
+// Set up PDF.js worker with multiple fallbacks
+const setupPDFWorker = () => {
+  // Try CDN worker directly - most reliable option
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+  console.log('PDF Worker set to:', pdfjsLib.GlobalWorkerOptions.workerSrc);
+};
 
-// Or fallback to CDN if local doesn't work
-// pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Initialize worker immediately
+setupPDFWorker();
 
 interface PDFViewerModalProps {
   isOpen: boolean;
@@ -263,7 +264,7 @@ const PDFViewerModal: React.FC<PDFViewerModalProps> = ({
   );
 };
 
-// SimplePDFViewer with improved error handling and fallback worker
+// Completely rewritten SimplePDFViewer with robust error handling
 interface SimplePDFViewerProps {
   pdfUrl: string;
   scale: number;
@@ -286,7 +287,7 @@ const SimplePDFViewer: React.FC<SimplePDFViewerProps> = ({
   const [totalPages, setTotalPages] = useState(0);
   const isLoadingRef = useRef(false);
 
-  // Load PDF document with fallback worker setup
+  // Load PDF document with comprehensive error handling
   useEffect(() => {
     if (!pdfUrl || isLoadingRef.current) {
       if (!pdfUrl) {
@@ -305,20 +306,21 @@ const SimplePDFViewer: React.FC<SimplePDFViewerProps> = ({
         console.log('Loading PDF from:', pdfUrl);
         console.log('Using worker:', pdfjsLib.GlobalWorkerOptions.workerSrc);
 
-        // Fallback to CDN worker if local worker fails
+        // Ensure worker is set up correctly
         if (!pdfjsLib.GlobalWorkerOptions.workerSrc || 
-            pdfjsLib.GlobalWorkerOptions.workerSrc.includes('pdf.worker.min.js')) {
-          console.log('Setting fallback CDN worker...');
-          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+            pdfjsLib.GlobalWorkerOptions.workerSrc === '') {
+          setupPDFWorker();
         }
 
-        // Simplified PDF loading
-        const loadingTask = pdfjsLib.getDocument({
-          url: pdfUrl,
-          useWorkerFetch: false,
-          isEvalSupported: false,
-          maxImageSize: 1024 * 1024,
-        });
+        // Use the most basic PDF loading configuration
+        const loadingTask = pdfjsLib.getDocument(pdfUrl);
+        
+        loadingTask.onProgress = (progress: any) => {
+          if (progress.total > 0) {
+            const percent = Math.round((progress.loaded / progress.total) * 100);
+            console.log(`Loading progress: ${percent}%`);
+          }
+        };
 
         const pdf = await loadingTask.promise;
         console.log('PDF loaded successfully, pages:', pdf.numPages);
@@ -333,52 +335,55 @@ const SimplePDFViewer: React.FC<SimplePDFViewerProps> = ({
         
       } catch (err: any) {
         console.error('Failed to load PDF:', err);
+        console.error('Error details:', {
+          name: err.name,
+          message: err.message,
+          stack: err.stack
+        });
         
-        // If worker failed, try CDN fallback
-        if (err.message?.includes('worker') || err.message?.includes('script')) {
-          console.log('Worker failed, trying CDN fallback...');
-          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+        let errorMessage = 'Unknown error occurred';
+        
+        if (err.message?.includes('CORS')) {
+          errorMessage = 'PDF blocked by CORS policy. Please check server configuration.';
+        } else if (err.message?.includes('404') || err.message?.includes('Not Found')) {
+          errorMessage = 'PDF file not found at the specified URL.';  
+        } else if (err.message?.includes('fetch') || err.message?.includes('network')) {
+          errorMessage = 'Network error while loading PDF. Please check your connection.';
+        } else if (err.message?.includes('worker') || err.message?.includes('WorkerMessageHandler')) {
+          errorMessage = 'PDF worker initialization failed. Using fallback method.';
           
-          // Retry once with CDN worker
+          // Try without worker as last resort
           try {
-            const loadingTask = pdfjsLib.getDocument({
+            console.log('Attempting to load PDF without worker...');
+            pdfjsLib.GlobalWorkerOptions.workerSrc = null;
+            
+            const fallbackTask = pdfjsLib.getDocument({
               url: pdfUrl,
               useWorkerFetch: false,
-              isEvalSupported: false,
-              maxImageSize: 1024 * 1024,
+              isEvalSupported: false
             });
-
-            const pdf = await loadingTask.promise;
-            console.log('PDF loaded with CDN worker, pages:', pdf.numPages);
             
-            pdfDocRef.current = pdf;
-            setTotalPages(pdf.numPages);
+            const fallbackPdf = await fallbackTask.promise;
+            console.log('PDF loaded without worker, pages:', fallbackPdf.numPages);
             
-            await renderAllPages(pdf, scale);
+            pdfDocRef.current = fallbackPdf;
+            setTotalPages(fallbackPdf.numPages);
+            
+            await renderAllPages(fallbackPdf, scale);
             
             onLoadingChange(false);
             isLoadingRef.current = false;
             return;
             
-          } catch (retryErr: any) {
-            console.error('CDN worker retry also failed:', retryErr);
+          } catch (fallbackErr: any) {
+            console.error('Fallback method also failed:', fallbackErr);
+            errorMessage = `PDF loading failed: ${fallbackErr.message || 'Worker and fallback methods both failed'}`;
           }
-        }
-        
-        let errorMessage = 'Unknown error';
-        if (err.message?.includes('CORS')) {
-          errorMessage = 'PDF blocked by CORS policy';
-        } else if (err.message?.includes('404')) {
-          errorMessage = 'PDF file not found';  
-        } else if (err.message?.includes('fetch')) {
-          errorMessage = 'Network error loading PDF';
-        } else if (err.message?.includes('worker')) {
-          errorMessage = 'PDF worker setup failed';
         } else if (err.message) {
           errorMessage = err.message;
         }
         
-        onError(`Failed to load PDF: ${errorMessage}`);
+        onError(errorMessage);
         onLoadingChange(false);
         isLoadingRef.current = false;
       }
@@ -413,8 +418,10 @@ const SimplePDFViewer: React.FC<SimplePDFViewerProps> = ({
     try {
       console.log('Rendering all pages at scale:', currentScale);
       
+      // Clear container
       containerRef.current.innerHTML = '';
 
+      // Create pages wrapper
       const pagesWrapper = document.createElement('div');
       pagesWrapper.style.cssText = `
         display: flex;
@@ -427,22 +434,26 @@ const SimplePDFViewer: React.FC<SimplePDFViewerProps> = ({
       `;
       containerRef.current.appendChild(pagesWrapper);
 
+      // Render each page
       for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
         try {
           const page = await pdfDoc.getPage(pageNum);
           const viewport = page.getViewport({ scale: currentScale });
 
+          // Create page container
           const pageContainer = document.createElement('div');
           pageContainer.style.cssText = `
             background: white;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            border-radius: 4px;
+            border-radius: 8px;
             overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
+            margin-bottom: 10px;
           `;
 
+          // Create canvas
           const canvas = document.createElement('canvas');
           const context = canvas.getContext('2d');
           
@@ -461,6 +472,7 @@ const SimplePDFViewer: React.FC<SimplePDFViewerProps> = ({
           pageContainer.appendChild(canvas);
           pagesWrapper.appendChild(pageContainer);
 
+          // Render page to canvas
           const renderContext = {
             canvasContext: context,
             viewport: viewport
@@ -472,6 +484,7 @@ const SimplePDFViewer: React.FC<SimplePDFViewerProps> = ({
         } catch (pageError) {
           console.error(`Error rendering page ${pageNum}:`, pageError);
           
+          // Create error placeholder for failed page
           const errorDiv = document.createElement('div');
           errorDiv.style.cssText = `
             width: 600px;
@@ -482,18 +495,27 @@ const SimplePDFViewer: React.FC<SimplePDFViewerProps> = ({
             align-items: center;
             justify-content: center;
             color: #666;
+            font-size: 14px;
+            text-align: center;
             margin: 10px 0;
+            border-radius: 8px;
           `;
-          errorDiv.textContent = `Error loading page ${pageNum}`;
+          errorDiv.innerHTML = `
+            <div>
+              <p>Error loading page ${pageNum}</p>
+              <p style="font-size: 12px; margin-top: 8px; opacity: 0.7;">${pageError.message || 'Unknown error'}</p>
+            </div>
+          `;
+          
           pagesWrapper.appendChild(errorDiv);
         }
       }
 
-      console.log('All pages rendered successfully');
+      console.log('All pages processed successfully');
 
     } catch (err) {
-      console.error('Error rendering pages:', err);
-      onError('Failed to render PDF pages');
+      console.error('Error in renderAllPages:', err);
+      onError(`Failed to render PDF pages: ${err.message || 'Unknown error'}`);
     }
   };
 
@@ -505,7 +527,8 @@ const SimplePDFViewer: React.FC<SimplePDFViewerProps> = ({
         width: '100%',
         height: '100%',
         overflow: 'auto',
-        background: '#f5f5f5'
+        background: '#f5f5f5',
+        position: 'relative'
       }}
     />
   );

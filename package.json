@@ -4,11 +4,14 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "copy-pdf-worker": "cp node_modules/pdfjs-dist/build/pdf.worker.min.js public/pdf.worker.min.js",
+    "dev": "npm run copy-pdf-worker && vite",
+    "build": "npm run copy-pdf-worker && vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "prebuild": "npm run copy-pdfjs",
+    "prestart": "npm run copy-pdfjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

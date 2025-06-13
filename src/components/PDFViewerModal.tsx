@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, ZoomIn, ZoomOut } from 'lucide-react';
 import { Button } from './ui/button';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -44,18 +44,58 @@ const PDFViewerModal: React.FC<PDFViewerModalProps> = ({
     }
   }, [isOpen, isMobile]);
 
-  const handleZoomIn = () => {
-    setScale(prev => Math.min(5, prev + 0.25));
+  // Fixed zoom handlers - Remove useCallback and scale dependency
+  const handleZoomIn = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Zoom in clicked');
+    setScale(prev => {
+      const newScale = Math.min(5, prev + 0.25);
+      console.log('New scale:', newScale);
+      return newScale;
+    });
   };
 
-  const handleZoomOut = () => {
-    setScale(prev => Math.max(0.5, prev - 0.25));
+  const handleZoomOut = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Zoom out clicked');
+    setScale(prev => {
+      const newScale = Math.max(0.5, prev - 0.25);
+      console.log('New scale:', newScale);
+      return newScale;
+    });
+  };
+
+  const handleClose = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Close button clicked');
+    onClose();
+  };
+
+  // Alternative approach using refs if the above doesn't work
+  const handleZoomInAlt = () => {
+    setScale(currentScale => {
+      const newScale = Math.min(5, currentScale + 0.25);
+      console.log('Zoom in - current:', currentScale, 'new:', newScale);
+      return newScale;
+    });
+  };
+
+  const handleZoomOutAlt = () => {
+    setScale(currentScale => {
+      const newScale = Math.max(0.5, currentScale - 0.25);
+      console.log('Zoom out - current:', currentScale, 'new:', newScale);
+      return newScale;
+    });
   };
 
   // Close modal on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
+        console.log('Escape key pressed');
         onClose();
       }
     };
@@ -71,32 +111,96 @@ const PDFViewerModal: React.FC<PDFViewerModalProps> = ({
     };
   }, [isOpen, onClose]);
 
+  // Debug log to check scale changes
+  useEffect(() => {
+    console.log('Scale changed to:', scale);
+  }, [scale]);
+
   if (!isOpen) return null;
+
+  // Add this test function right before the return statement
+  const testButtonClick = () => {
+    console.log('TEST BUTTON CLICKED - This proves onClick works');
+    alert('Button click detected!');
+  };
 
   return (
     <div className="pdf-modal">
       <div className="pdf-modal-backdrop" onClick={onClose}></div>
       
       <div className="pdf-modal-container">
-        {/* Header */}
+        {/* Header with improved button handling */}
         <div className="pdf-modal-header">
           <h2 className="text-xl font-semibold truncate">{title}</h2>
 
           <div className="pdf-controls">
+            {/* Temporary test button */}
+            <button onClick={testButtonClick} style={{background: 'red', color: 'white', padding: '8px'}}>
+              TEST
+            </button>
+            
             {!isMobile && (
               <>
-                <Button variant="outline" size="icon" onClick={handleZoomOut} title="Zoom out">
+                {/* Try regular buttons first */}
+                <button 
+                  onClick={handleZoomOutAlt}
+                  disabled={scale <= 0.5}
+                  title="Zoom out"
+                  style={{
+                    padding: '8px',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    background: scale <= 0.5 ? '#f5f5f5' : 'white',
+                    cursor: scale <= 0.5 ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
                   <ZoomOut className="h-4 w-4" />
-                </Button>
-                <span className="pdf-zoom-level">{Math.round(scale * 100)}%</span>
-                <Button variant="outline" size="icon" onClick={handleZoomIn} title="Zoom in">
+                </button>
+                
+                <span className="pdf-zoom-level" style={{ margin: '0 8px', minWidth: '50px', textAlign: 'center' }}>
+                  {Math.round(scale * 100)}%
+                </span>
+                
+                <button 
+                  onClick={handleZoomInAlt}
+                  disabled={scale >= 5}
+                  title="Zoom in"
+                  style={{
+                    padding: '8px',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    background: scale >= 5 ? '#f5f5f5' : 'white',
+                    cursor: scale >= 5 ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
                   <ZoomIn className="h-4 w-4" />
-                </Button>
+                </button>
               </>
             )}
-            <Button variant="ghost" size="icon" onClick={onClose} title="Close">
+            
+            <button 
+              onClick={() => onClose()}
+              title="Close"
+              style={{
+                padding: '8px',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                background: 'white',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginLeft: '8px'
+              }}
+            >
               <X className="h-5 w-5" />
-            </Button>
+            </button>
           </div>
         </div>
 
@@ -126,12 +230,22 @@ const PDFViewerModal: React.FC<PDFViewerModalProps> = ({
         {error && !isLoading && (
           <div className="pdf-error">
             <p>Failed to load PDF: {error}</p>
-            <Button onClick={() => {
-              setError(null);
-              setIsLoading(true);
-            }}>
+            <button 
+              onClick={() => {
+                setError(null);
+                setIsLoading(true);
+              }}
+              style={{
+                padding: '8px 16px',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                background: 'white',
+                cursor: 'pointer',
+                marginTop: '8px'
+              }}
+            >
               Retry
-            </Button>
+            </button>
           </div>
         )}
       </div>
@@ -177,35 +291,165 @@ const SimplePDFViewer: React.FC<SimplePDFViewerProps> = ({
         console.log('Loading PDF from:', pdfUrl);
         console.log('Using worker:', pdfjsLib.GlobalWorkerOptions.workerSrc);
 
-        // Create loading task with better configuration
-        const loadingTask = pdfjsLib.getDocument({
-          url: pdfUrl,
-          httpHeaders: {
-            'Accept': 'application/pdf',
-            'Cache-Control': 'no-cache'
-          },
-          withCredentials: false,
-          isEvalSupported: false,
-          maxImageSize: 1024 * 1024, // 1MB max image size
-          disableFontFace: false,
-          disableRange: false,
-          disableStream: false
-        });
-
-        const pdf = await loadingTask.promise;
-        console.log('PDF loaded successfully, pages:', pdf.numPages);
-
-        pdfDocRef.current = pdf;
-        setTotalPages(pdf.numPages);
-        
-        // Start rendering pages
-        await renderAllPages(pdf);
+        // Try multiple loading strategies
+        await tryLoadingStrategies();
         
       } catch (err) {
-        console.error('Failed to load PDF:', err);
+        console.error('All loading strategies failed:', err);
         onError(`Failed to load PDF: ${err.message || 'Unknown error'}`);
         onLoadingChange(false);
       }
+    };
+
+    const tryLoadingStrategies = async () => {
+      const strategies = [
+        // Strategy 1: Use no-cors mode with PDF.js direct loading
+        async () => {
+          console.log('Trying no-cors direct PDF.js load...');
+          const loadingTask = pdfjsLib.getDocument({
+            url: pdfUrl,
+            isEvalSupported: false,
+            maxImageSize: 1024 * 1024,
+            disableFontFace: false,
+            useSystemFonts: true,
+            // Configure PDF.js to handle CORS issues
+            httpHeaders: {},
+            withCredentials: false,
+            // Use built-in fetch with no-cors equivalent
+            fetchOptions: {
+              mode: 'no-cors'
+            }
+          });
+          return await loadingTask.promise;
+        },
+
+        // Strategy 2: Create a proxy request through your backend
+        async () => {
+          console.log('Trying backend proxy method...');
+          
+          // Check if you have a proxy endpoint available
+          const proxyUrl = `/api/proxy-pdf?url=${encodeURIComponent(pdfUrl)}`;
+          
+          const loadingTask = pdfjsLib.getDocument({
+            url: proxyUrl,
+            isEvalSupported: false,
+            maxImageSize: 1024 * 1024,
+            disableFontFace: false,
+            useSystemFonts: true
+          });
+          return await loadingTask.promise;
+        },
+
+        // Strategy 3: XMLHttpRequest with CORS handling
+        async () => {
+          console.log('Trying XMLHttpRequest method...');
+          return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', pdfUrl, true);
+            xhr.responseType = 'arraybuffer';
+            
+            // Handle CORS by not setting custom headers
+            xhr.onload = async () => {
+              if (xhr.status === 200 || xhr.status === 0) {
+                try {
+                  console.log('XHR response received, size:', xhr.response?.byteLength);
+                  
+                  if (!xhr.response || xhr.response.byteLength === 0) {
+                    throw new Error('Empty response received');
+                  }
+                  
+                  const loadingTask = pdfjsLib.getDocument({
+                    data: xhr.response,
+                    isEvalSupported: false,
+                    maxImageSize: 1024 * 1024,
+                    disableFontFace: false,
+                    useSystemFonts: true
+                  });
+                  const pdf = await loadingTask.promise;
+                  resolve(pdf);
+                } catch (error) {
+                  console.error('Error processing XHR response:', error);
+                  reject(error);
+                }
+              } else {
+                reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText || 'Request failed'}`));
+              }
+            };
+            
+            xhr.onerror = (e) => {
+              console.error('XHR error:', e);
+              reject(new Error('Network error - CORS may be blocking the request'));
+            };
+            
+            xhr.ontimeout = () => reject(new Error('Request timeout'));
+            xhr.timeout = 30000;
+            
+            try {
+              xhr.send();
+            } catch (sendError) {
+              reject(new Error('Failed to send request - CORS policy may be blocking'));
+            }
+          });
+        },
+
+        // Strategy 4: Use a public CORS proxy (for testing only)
+        async () => {
+          console.log('Trying CORS proxy method...');
+          
+          // Using a public CORS proxy (not recommended for production)
+          const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(pdfUrl)}`;
+          
+          const loadingTask = pdfjsLib.getDocument({
+            url: proxyUrl,
+            isEvalSupported: false,
+            maxImageSize: 1024 * 1024,
+            disableFontFace: false,
+            useSystemFonts: true
+          });
+          return await loadingTask.promise;
+        }
+      ];
+
+      let lastError;
+      
+      for (let i = 0; i < strategies.length; i++) {
+        try {
+          console.log(`Trying loading strategy ${i + 1}/${strategies.length}`);
+          const pdf = await strategies[i]();
+          console.log('PDF loaded successfully, pages:', pdf.numPages);
+          
+          pdfDocRef.current = pdf;
+          setTotalPages(pdf.numPages);
+          
+          // Start rendering pages
+          await renderAllPages(pdf);
+          return; // Success, exit the function
+          
+        } catch (error: any) {
+          console.warn(`Strategy ${i + 1} failed:`, error.message);
+          lastError = error;
+          
+          // If it's a CORS error, continue to next strategy
+          if (error.message?.includes('CORS') || 
+              error.message?.includes('Network') ||
+              error.message?.includes('fetch')) {
+            continue;
+          }
+          
+          // For other errors, still try remaining strategies
+          continue;
+        }
+      }
+      
+      // If all strategies failed, throw a more descriptive error
+      const corsError = lastError?.message?.includes('CORS') || 
+                       lastError?.message?.includes('Network');
+      
+      if (corsError) {
+        throw new Error('CORS policy is blocking PDF access. Please contact the administrator to enable CORS headers on the server.');
+      }
+      
+      throw lastError || new Error('All PDF loading strategies failed');
     };
 
     loadPdf();

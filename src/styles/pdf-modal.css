@@ -26,8 +26,21 @@
   padding: 0.75rem 1rem;
   background-color: white;
   border-bottom: 1px solid #e5e7eb;
-  z-index: 10;
+  z-index: 1000 !important;
   flex-shrink: 0;
+  position: relative;
+  min-height: 60px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Ensure header title doesn't interfere with controls */
+.pdf-modal-header h2 {
+  flex: 1;
+  margin: 0;
+  padding-right: 1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* PDF Content Area */
@@ -40,6 +53,7 @@
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: #d1d5db #f3f4f6;
+  z-index: 1; /* Lower than header */
 }
 
 /* Styling scrollbars for WebKit browsers */
@@ -142,20 +156,75 @@
   z-index: 5;
 }
 
-/* PDF Controls */
+/* PDF Controls - Enhanced for better functionality */
 .pdf-controls {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   justify-content: center;
+  z-index: 1001; /* Ensure controls are above other elements */
+  position: relative;
 }
 
-/* Zoom Percentage Display */
+/* Control buttons styling */
+.pdf-controls button {
+  padding: 8px !important;
+  border: 1px solid #ccc !important;
+  border-radius: 4px !important;
+  background: white !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 36px !important;
+  min-height: 36px !important;
+  transition: all 0.2s ease !important;
+  pointer-events: auto !important;
+  user-select: none !important;
+  outline: none !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+.pdf-controls button:hover:not(:disabled) {
+  background: #f3f4f6 !important;
+  border-color: #9ca3af !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15) !important;
+}
+
+.pdf-controls button:active:not(:disabled) {
+  transform: translateY(0) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+.pdf-controls button:disabled {
+  background: #f5f5f5 !important;
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.pdf-controls button:focus {
+  outline: 2px solid #3b82f6 !important;
+  outline-offset: 2px !important;
+}
+
+/* Zoom level display */
 .pdf-zoom-level {
-  min-width: 3rem;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum";
+  min-width: 50px !important;
+  text-align: center !important;
+  font-variant-numeric: tabular-nums !important;
+  font-feature-settings: "tnum" !important;
+  font-weight: 500 !important;
+  color: #374151 !important;
+  background: #f9fafb !important;
+  padding: 4px 8px !important;
+  border-radius: 4px !important;
+  border: 1px solid #e5e7eb !important;
+  margin: 0 4px !important;
+  user-select: none !important;
+  pointer-events: none !important;
 }
 
 /* Loading Indicator */
@@ -260,3 +329,71 @@
     margin-bottom: 0.5rem;
   }
 }
+
+/* Mobile responsiveness for controls */
+@media (max-width: 768px) {
+  .pdf-controls {
+    gap: 0.25rem;
+  }
+  
+  .pdf-controls button {
+    min-width: 32px !important;
+    min-height: 32px !important;
+    padding: 6px !important;
+  }
+  
+  .pdf-zoom-level {
+    min-width: 40px !important;
+    font-size: 0.875rem !important;
+    padding: 2px 6px !important;
+  }
+  
+  .pdf-modal-header {
+    padding: 0.5rem 0.75rem;
+  }
+}
+
+/* Additional safety rules to override any conflicting styles */
+.pdf-modal .pdf-controls button[disabled] {
+  pointer-events: none !important;
+}
+
+.pdf-modal .pdf-controls button:not([disabled]) {
+  pointer-events: auto !important;
+}
+
+/* Ensure proper stacking context */
+.pdf-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background-color: #fafafa;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  touch-action: manipulation;
+}
+
+/* Make sure backdrop doesn't interfere with header clicks */
+.pdf-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: -1; /* Behind the modal container */
+}
+
+.pdf-modal-container {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: white;
+}
+
+/* Debug helper - remove after testing */
+.pdf-controls button:hover {
+  border: 2px solid red !important; /* Temporary - helps identify if hover works */
+}
+
+/* ...rest of existing CSS... */

@@ -3,7 +3,6 @@ import { X, ZoomIn, ZoomOut } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 import 'pdfjs-dist/web/pdf_viewer.css';
 
-// Use CDN worker for reliability
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 interface PDFViewerModalProps {
@@ -22,28 +21,44 @@ const PDFViewerModal: React.FC<PDFViewerModalProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [loading, setLoading] = useState(true);
   const [scale, setScale] = useState(1.2);
+  const [error, setError] = useState<string | null>(null);
 
+  // Render PDF page
   useEffect(() => {
     if (!isOpen || !pdfUrl) return;
 
     let pdfDoc: any = null;
+    let cancelled = false;
     setLoading(true);
+    setError(null);
 
-    pdfjsLib.getDocument(pdfUrl).promise.then((pdf: any) => {
-      pdfDoc = pdf;
-      return pdf.getPage(1);
-    }).then((page: any) => {
-      const viewport = page.getViewport({ scale });
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const context = canvas.getContext('2d');
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
-      page.render({ canvasContext: context, viewport });
-      setLoading(false);
-    });
+    pdfjsLib.getDocument(pdfUrl).promise
+      .then((pdf: any) => {
+        pdfDoc = pdf;
+        return pdf.getPage(1);
+      })
+      .then((page: any) => {
+        if (cancelled) return;
+        const viewport = page.getViewport({ scale });
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        return page.render({ canvasContext: context, viewport }).promise;
+      })
+      .then(() => {
+        if (!cancelled) setLoading(false);
+      })
+      .catch((err: any) => {
+        if (!cancelled) {
+          setError('Failed to load PDF.');
+          setLoading(false);
+        }
+      });
 
     return () => {
+      cancelled = true;
       if (pdfDoc) pdfDoc.destroy();
     };
   }, [isOpen, pdfUrl, scale]);
@@ -65,6 +80,7 @@ const PDFViewerModal: React.FC<PDFViewerModalProps> = ({
               disabled={scale <= 0.5}
               className="p-2 rounded hover:bg-gray-100"
               title="Zoom Out"
+              type="button"
             >
               <ZoomOut className="h-5 w-5" />
             </button>
@@ -74,6 +90,7 @@ const PDFViewerModal: React.FC<PDFViewerModalProps> = ({
               disabled={scale >= 3}
               className="p-2 rounded hover:bg-gray-100"
               title="Zoom In"
+              type="button"
             >
               <ZoomIn className="h-5 w-5" />
             </button>
@@ -81,15 +98,20 @@ const PDFViewerModal: React.FC<PDFViewerModalProps> = ({
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               title="Close"
+              type="button"
             >
               <X className="h-5 w-5" />
             </button>
           </div>
         </div>
         <div className="flex-1 flex items-center justify-center p-4 overflow-auto">
-          {loading ? (
+          {loading && !error && (
             <span>Loading PDF...</span>
-          ) : (
+          )}
+          {error && (
+            <span className="text-red-500">{error}</span>
+          )}
+          {!loading && !error && (
             <canvas
               ref={canvasRef}
               style={{

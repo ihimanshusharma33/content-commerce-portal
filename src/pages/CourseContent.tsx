@@ -8,8 +8,6 @@ import PDFViewerModal from '@/components/PDFViewerModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { isAuthenticated } from '@/services/authService';
 import { getSubjectChapters } from '@/services/apiService';
-import GooglePDFModal from '@/components/GooglePDFModal';
-
 interface Chapter {
   chapter_id: number;
   chapter_name: string;
@@ -33,15 +31,7 @@ const CourseContent: React.FC = () => {
   const params = useParams();
   const { subjectId, id } = useParams<{ subjectId?: string; id?: string }>();
   
-  // Add extensive debugging
-  console.log('=== CourseContent Debug ===');
-  console.log('All URL params:', params);
-  console.log('subjectId from useParams:', subjectId);
-  console.log('id from useParams:', id);
-  console.log('Current pathname:', window.location.pathname);
-  console.log('Current search:', window.location.search);
-  console.log('========================');
-  
+
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(isAuthenticated());
   const [subject, setSubject] = useState<Subject | null>(null);
@@ -350,7 +340,7 @@ const CourseContent: React.FC = () => {
                 <PDFViewerModal
                   isOpen={isPdfOpen}
                   onClose={handleClosePdf}
-                  pdfUrl={currentChapter.resource_link}
+                  pdfUrl={currentChapter.resource_link} // Use local test PDF
                   title={currentChapter.chapter_name}
                 />
               )}

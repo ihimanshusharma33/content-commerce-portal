@@ -8,6 +8,7 @@ import PDFViewerModal from '@/components/PDFViewerModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { isAuthenticated } from '@/services/authService';
 import { getSubjectChapters } from '@/services/apiService';
+import GooglePDFModal from '@/components/GooglePDFModal';
 
 interface Chapter {
   chapter_id: number;

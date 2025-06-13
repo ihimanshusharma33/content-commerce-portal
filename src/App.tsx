@@ -12,9 +12,7 @@ import CourseSubjects from "./pages/CourseSubjects"; // Ensure the file './pages
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import StudentDashboard from "./students/StudentDashboard";
-import PaymentSuccess from "./pages/PaymentStatus";
 import AdminDashboard from "./admin/AdminDashoboard";
-import PDFViewerPage from "./pages/PDFViewerPage";
 import MyCourses from "./pages/MyCourses";
 import PaymentPage from "./pages/PaymentPage";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -58,15 +56,13 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route path="/pdf/:pdfId" element={<PDFViewerPage />} />
-            <Route path="/pdf-viewer" element={<PDFViewerPage />} />
             <Route path="/checkout/:courseOrSubject/:courseId" element={<PaymentPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
-     <WhatsAppButton />
+    <WhatsAppButton />
   </QueryClientProvider>
 );
 

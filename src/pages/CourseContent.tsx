@@ -8,6 +8,7 @@ import PDFViewerModal from '@/components/PDFViewerModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { isAuthenticated } from '@/services/authService';
 import { getSubjectChapters } from '@/services/apiService';
+import PDf from '../../public/assests/pdf/Chapter.pdf'
 interface Chapter {
   chapter_id: number;
   chapter_name: string;
@@ -45,7 +46,36 @@ const CourseContent: React.FC = () => {
   // PDF state
   const [isPdfOpen, setIsPdfOpen] = useState(false);
 
+  // Add this state
+  const [devToolsOpen, setDevToolsOpen] = useState(false);
+
   const user = useAuth();
+
+  // Detect DevTools
+  useEffect(() => {
+    let threshold = 160;
+    let check = () => {
+      const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+      const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+      if (
+        widthThreshold ||
+        heightThreshold ||
+        (window as any).firebug ||
+        (window as any).devtools
+      ) {
+        setDevToolsOpen(true);
+      } else {
+        setDevToolsOpen(false);
+      }
+    };
+    window.addEventListener('resize', check);
+    const interval = setInterval(check, 1000);
+    check();
+    return () => {
+      window.removeEventListener('resize', check);
+      clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     console.log('CourseContent mounted with params:', { subjectId, id, allParams: params });
@@ -157,7 +187,37 @@ const CourseContent: React.FC = () => {
   
   const handleClosePdf = () => {
     setIsPdfOpen(false);
-  };
+ };
+
+  useEffect(() => {
+    const handleContextMenu = (e: MouseEvent) => e.preventDefault();
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key)) || // Ctrl+Shift+I/J/C
+        (e.ctrlKey && e.key === 'U') || // Ctrl+U
+        (e.key === 'F12')
+      ) {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  if (devToolsOpen) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">DevTools Detected</h2>
+          <p className="text-gray-700">Please close your browser's developer tools to view this content.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isLoggedIn) {
     return null; // Will redirect
@@ -340,7 +400,7 @@ const CourseContent: React.FC = () => {
                 <PDFViewerModal
                   isOpen={isPdfOpen}
                   onClose={handleClosePdf}
-                  pdfUrl={currentChapter.resource_link} // Use local test PDF
+                  pdfUrl={currentChapter.resource_link} // Use local test PDF 
                   title={currentChapter.chapter_name}
                 />
               )}
